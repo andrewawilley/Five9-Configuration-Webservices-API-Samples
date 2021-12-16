@@ -79,7 +79,7 @@ listUpdateSettings={
     "skipHeaderLine": "false",
     "cleanListBeforeUpdate": "false", # set True to wipe the list clean before import
     "crmAddMode": "ADD_NEW",
-    "crmUpdateMode": "DONT_UPDATE", # CAUTION - ensure proper record key values are set
+    "crmUpdateMode": "UPDATE ALL", # CAUTION - ensure proper record key values are set
     "listAddMode": "ADD_FIRST", # if multiple contactDB records matched, determine if multiple list entries should be added.
     #"callTime": 1632950195000,
     #"callTimeColumnNumber": 4
