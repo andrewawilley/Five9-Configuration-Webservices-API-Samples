@@ -32,3 +32,12 @@ The credentials object looks like this:
     }
 
 If you run a script without this accounts object, you'll be prompted to enter username and password in the console. 
+
+# Creating and using a shell session
+
+After activating the virtual evnironment and starting a python shell
+    from five9_session import *
+    client = five9_session.get_client()
+
+This will return a client object that can invoke any of the API endpoints.  For example:
+    call_variables = client.service.getCallVariables()
