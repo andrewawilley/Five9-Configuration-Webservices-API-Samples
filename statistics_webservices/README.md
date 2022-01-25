@@ -24,3 +24,29 @@ Per Page 31 of the Statistics Webservices API documentation, the following stati
 |InboundCampaignStatistics|Statistics about inbound campaigns.|
 |AutodialCampaignStatistics|Statistics about autodial campaigns.|
 
+# setSession Notes
+
+Each Statistics API client session must be initialized with viewSettings options
+
+    view_settings = {
+        "forceLogoutSession": "yes",
+        # [Minutes5,Minutes10,Minutes15,Minutes30,Hour1,Hours2,Hours3,Today]
+        "rollingPeriod": "Today",
+        "shiftStart": "28800000",
+        "statisticsRange": "CurrentWeek",
+        "timeZone": "-25200000",
+    }
+
+note that the shiftStart is the starting time for the day’s shift in milliseconds starting at midnight. Used to calculate certain statistics.
+
+  - Example: 8 AM = 8h x 60m x 60s x 1000 ms = 28,800,000 ms
+
+The timeZone option is also an offset in milliseconds since midnight.  
+  
+  - Example: PST(-7h GMT) = 7h x 60m x 60s x 1000 ms = 25,200,000 ms
+
+rollingPeriod is the time range used to calculate aggregate statistics in Outbound Campaign Manager; corresponds to Campaign Manager Rolling Period in the Supervisor VCC.
+
+statisticsRange is the time interval for aggregate statistics.  Options are:
+
+  - [RollingHour, CurrentDay, CurrentWeek, CurrentMonth, Lifetime, CurrentShift]

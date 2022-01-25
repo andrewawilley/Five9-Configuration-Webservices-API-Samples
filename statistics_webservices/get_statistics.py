@@ -73,7 +73,8 @@ except requests.exceptions.HTTPError as e:
 ################################################################################
 
 
-# this method needs to be called 
+# this method needs to be called to initialize the session
+
 def set_session_parameters(view_settings=None):
     # page 59 of the Statistics Webservices API Reference Guide
     if view_settings is None:
