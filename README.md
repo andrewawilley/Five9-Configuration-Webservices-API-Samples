@@ -1,6 +1,6 @@
 # Quickstart
 
-The purpose of this repository is to provide individually functional scripts to demonstrate how to use Five9 Configuration Webservices API methods
+The purpose of this repository is to provide individually functional scripts to demonstrate how to use Five9 Configuration Webservices API methods in Python.
 
 ### Windows Users
     mkdir venvs
@@ -22,7 +22,7 @@ The purpose of this repository is to provide individually functional scripts to 
 
 The bootstrap.py script will create a private folder that can contain a credentials.py file where you can keep reusable Five9 admin API user credentials in a slightly more secure way than right in the script.  The private folder is excluded from Git.  
 
-The credentials object looks like this:
+The credentials object in private.credentials looks like this:
 
     ACCOUNTS = {
         'default_account': {
@@ -34,11 +34,11 @@ The credentials object looks like this:
 If you run a script without this accounts object, you'll be prompted to enter username and password in the console. 
 
 # Creating and using a shell session
-After activating the virtual evnironment and starting a python shell
+After activating the virtual evnironment and starting a python shell, an authenticated client can be obtained using the included five9_session.py
 
     from five9_session import *
     client = five9_session.get_client()
 
-This will return a client object that can invoke any of the API endpoints.  For example:
+This will return an authenticated client object that can invoke any of the API endpoints.  For example:
 
     call_variables = client.service.getCallVariables()
