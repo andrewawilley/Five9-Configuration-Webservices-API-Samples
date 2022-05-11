@@ -3,7 +3,7 @@ import os
 # create files that will be excluded from the repository from list of tuples
 # first tuple element is the filename with directory, second is the file content
 files_to_create = [
-    ("private/credentials.py", 
+    ("five9/private/credentials.py", 
         '''
 # update the below with the desired credential for semi-secure re-use credentials
 # When kept in the private folder, it will not be incldued in git commits
@@ -17,7 +17,7 @@ ACCOUNTS = {
     },
 }
 '''),
-    ("private/__init__.py", ""),
+    ("five9/private/__init__.py", ""),
 ]
 
 for new_file in files_to_create:

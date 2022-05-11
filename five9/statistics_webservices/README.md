@@ -7,7 +7,7 @@
     - Initial request of the statistics.  Returns a timestamp value to show the time through which the data is current
 
 3. getStatisticsUpdate (optional)
-    - optionally, call thsi method in a long-running loop, using the timestamp from the initial getStatistics method as the starting point.  This method also includes a timestamp parameter to use subsequently to obtain only the statistics that changed since the last update.
+    - optionally, call this method in a long-running loop, using the timestamp from the initial getStatistics method as the starting point.  This method also includes a timestamp parameter to use subsequently to obtain only the statistics that changed since the last update.
 
 # statisticType
 
