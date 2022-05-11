@@ -36,7 +36,7 @@ If you run a script without this accounts object, you'll be prompted to enter us
 # Creating and using a shell session
 After activating the virtual evnironment and starting a python shell, an authenticated client can be obtained using the included five9_session.py
 
-    from five9_session import *
+    import five9_session
     client = five9_session.get_client()
 
 This will return an authenticated client object that can invoke any of the API endpoints.  For example:
