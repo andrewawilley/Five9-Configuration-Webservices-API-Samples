@@ -2,43 +2,86 @@ import csv
 import datetime
 import time
 
+import zeep
+
 import five9_session
 
 
 client = five9_session.get_client()
 
-
-# add in all the username/password combos with the required fields below
-# here's an example of an excel formula used in one of the bulk user requests to generate a formatted user object
-# ="{'userName': '"&G2&"', 'password': 'Ssmsba1!', 'firstName': '"&E2&"', 'lastName': '"&F2&"', 'EMail': '"&D2&"',},"
-adds = [
-    {'userName': 'alejandro.sigaran@mytestdomain', 'password': get_random_password(), 'firstName': 'Alejandro', 'lastName': 'Sigaran', 'EMail': 'test1@gmail.com'},
-    {'userName': 'tama.clark@mytestdomain', 'password': get_random_password(), 'firstName': 'Tama', 'lastName': 'Clark', 'EMail': 'test2@gmail.com'},
-    {'userName': 'danielle.hershey@mytestdomain', 'password': get_random_password(), 'firstName': 'Danielle', 'lastName': 'Hershey', 'EMail': 'test3@yahoo.com'},
+# populate a list of usernames to manage the skills for
+users_to_update = [
+    'testguy3@aw_tam',
 ]
 
-created = 0
-processed = 0
-target_updates = len(adds)
+# populate a list of skills to add, and another list of skills to remove
+skill_names_to_add = [
+    'outbound_test',
+    'outreach_en'
+]
 
-# Identify a template agent that has the roles/skills that you want these users to have
-template_agent = client.service.getUserInfo('testguy1@aw_tam')
-roles = template_agent.roles
-skills = template_agent.skills
+skill_names_to_remove = [
+    'test'
+]
 
-added_users = []
+skills_to_add = []
+skills_to_remove = []
 
-for user in adds:
+for skill in skill_names_to_add:
     try:
-        skills[0].userName = user['userName']
-        nu = client.service.createUser({'generalInfo': user})
-        # print(f'{nu.generalInfo.userName}')
-        added_users.append(nu)
-        created += 1
-    except:
-        f = user['userName']
-        print(f'\nFAILED: {f}\n')
-    processed += 1
-    print(f'Updated:\t{created}/{target_updates}', end='\r')
+        skills_to_add.append(client.service.getSkill(skill))
+    except zeep.exceptions.Fault as e:
+        print(f'{e}')
 
-print(f'Updated:\t{created}/{target_updates}')
+for skill in skill_names_to_remove:
+    try:
+        skills_to_remove.append(client.service.getSkill(skill))
+    except zeep.exceptions.Fault as e:
+        print(f'{e}')
+
+
+errors = 0
+updated = 0
+
+target_updates = len(users_to_update)
+
+
+for user_to_update in users_to_update[updated:]:
+    for target_skill_to_add in skills_to_add:
+        user_skill_to_add = {
+            'id': target_skill_to_add.id,
+            # this could be set dynamically, hardcoded in this example to the highest level (1)
+            'level': 1,
+            'skillName': target_skill_to_add.name,
+            'userName': user_to_update
+        }
+        
+        try:
+            skill_added = client.service.userSkillAdd(userSkill=user_skill_to_add)
+            # force half second delay to avoid rate limits
+            time.sleep(.5)
+        except zeep.exceptions.Fault as e:
+            print(f'{e}')
+    
+    
+    for target_skill_to_remove in skills_to_remove:
+        user_skill_to_remove = {
+            'id': target_skill_to_remove.id,
+            'skillName': target_skill_to_remove.name,
+            'level': 1,
+            'userName': user_to_update
+        }
+    
+        try:
+            skill_removed = client.service.userSkillRemove(userSkill=user_skill_to_remove)
+            # force half second delay to avoid rate limits
+            time.sleep(.5)
+        except zeep.exceptions.Fault as e:
+            print(f'{e}')
+    
+    updated += 1
+    print(f'Updated:\t{updated}/{target_updates} \tErrors: {errors}', end='\r')
+    time.sleep(.5)
+
+print(f'Updated:\t{updated}/{target_updates} \tErrors: {errors}')
+
