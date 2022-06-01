@@ -2,9 +2,9 @@ import csv
 import datetime
 import time
 
-from five9 import five9_session
+import five9_session
 
-from five9.util import get_random_password
+from util import get_random_password
 
 client = five9_session.get_client()
 
