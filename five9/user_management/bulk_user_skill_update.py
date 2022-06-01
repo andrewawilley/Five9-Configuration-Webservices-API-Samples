@@ -4,7 +4,6 @@ import time
 
 import five9_session
 
-from util import get_random_password
 
 client = five9_session.get_client()
 
