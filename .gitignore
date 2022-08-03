@@ -44,7 +44,8 @@ private/
 settings/
 scratch/
 
-*domain_git/
+*domain_git*
+*domain_snapshot*
 
 # =========================
 # Operating System Files

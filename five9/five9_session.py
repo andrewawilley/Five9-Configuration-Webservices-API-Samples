@@ -6,23 +6,29 @@ from zeep.plugins import HistoryPlugin
 from private.credentials import ACCOUNTS
 
 # This function prints the SOAP envelope for the request and/or response
-def latest_envelope(history, last_sent=True, last_received=True):
+def latest_envelope(history, last_sent=True, last_received=True, print_to_console=True):
+    envelopes = {}
     try:
         if last_sent is True:
-            print(etree.tostring(
+            envelopes['last_sent'] = etree.tostring(
                 history.last_sent["envelope"], 
                 encoding="unicode", 
-                pretty_print=True))
+                pretty_print=True)
+            if print_to_console is True:
+                print(envelopes['last_sent'])
         if last_received is True:
-            print(etree.tostring(
+            envelopes['last_received'] = etree.tostring(
                 history.last_received["envelope"],
                 encoding="unicode",
-                pretty_print=True))
+                pretty_print=True)
+            if print_to_console is True:
+                print(envelopes['last_received'])
     except (IndexError, TypeError):
         # noncritical if fails here, pass
         pass
+    return envelopes
 
-def get_client(five9username=None, five9password=None):
+def get_client(five9username=None, five9password=None, account=None):
     # initialize the zeep history object
     history = HistoryPlugin()
 
@@ -32,9 +38,9 @@ def get_client(five9username=None, five9password=None):
             'https://api.five9.com/wsadmin/v12/?wsdl&user={five9username}',
     }
 
-    if five9username == None:
+    if five9username == None and five9password == None:
         # Target the desired account using the alias in private.credentials
-        api_account_alias = 'default_account'
+        api_account_alias = account or 'default_account'
         api_account = ACCOUNTS.get(api_account_alias, {})
 
         if api_account.get('username', None) in [None, 'apiUserUsername']:
@@ -60,6 +66,6 @@ def get_client(five9username=None, five9password=None):
         print(e)
 
     client.history = history
-    client.latest_envelope = latest_envelope
+    client.latest_envelope = latest_envelope(history)
 
     return client

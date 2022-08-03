@@ -13,7 +13,7 @@ client = five9_session.get_client()
 criteria_datetime_start = datetime.date.today()
 criteria_datetime_end = datetime.date.today() + datetime.timedelta(days=1)
 report_folder = "staging"
-report_name = "callLog_today"
+report_name = "staging_callLog"
 
 # Criteria object contains required parameters forthe runReport method
 report_criteria = {
