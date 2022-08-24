@@ -2,7 +2,9 @@ import csv
 import datetime
 import time
 
-from five9 import five9_session
+import zeep
+
+import five9_session
 
 
 client = five9_session.get_client()
@@ -90,7 +92,7 @@ row_count_in_result_csv = len(reportResultCsv)-1
 print(reportResultCsv)
 
 # This is more convenient if you don't want to parse the csv data
-reportResult = client.service.getReportResult(report_run_id)
+# reportResult = client.service.getReportResult(report_run_id)
 
 row_count_in_result = len(reportResult.records)
 print(f'Row count: {row_count_in_result}\n')

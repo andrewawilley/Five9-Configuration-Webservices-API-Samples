@@ -6,28 +6,17 @@ from zeep.plugins import HistoryPlugin
 from private.credentials import ACCOUNTS
 
 # This function prints the SOAP envelope for the request and/or response
-def latest_envelope(history, last_sent=True, last_received=True, print_to_console=True):
-    envelopes = {}
+def latest_envelopes(history):
+    envelopes = ""
     try:
-        if last_sent is True:
-            envelopes['last_sent'] = etree.tostring(
-                history.last_sent["envelope"], 
-                encoding="unicode", 
-                pretty_print=True)
-            if print_to_console is True:
-                print(envelopes['last_sent'])
-        if last_received is True:
-            envelopes['last_received'] = etree.tostring(
-                history.last_received["envelope"],
-                encoding="unicode",
-                pretty_print=True)
-            if print_to_console is True:
-                print(envelopes['last_received'])
+        for hist in [history.last_sent, history.last_received]:
+            e = etree.tostring(hist["envelope"], encoding="unicode", pretty_print=True)
+            envelopes += e + '\n\n'
+            print(e)
     except (IndexError, TypeError):
-        # noncritical if fails here, pass
+        # catch cases where it fails before being put on the wire
         pass
-    return envelopes
-
+    
 def get_client(five9username=None, five9password=None, account=None):
     # initialize the zeep history object
     history = HistoryPlugin()
@@ -65,7 +54,9 @@ def get_client(five9username=None, five9password=None, account=None):
         client = None
         print(e)
 
+    # last envelopes can be printed with
+    # client.latest_envelopes(client.history)
     client.history = history
-    client.latest_envelope = latest_envelope(history)
+    client.latest_envelopes = latest_envelopes
 
     return client
