@@ -102,19 +102,24 @@ def get_statistics(statistics_request_type):
     return client.service.getStatistics(statisticType=statistics_request_type)
    
 statistics_request_type = "AgentStatistics"
-
+statistics_request_type = "AgentState"
 # Optionally specify only the columns desired for the statistics updates
-# statistics_request_columns = {
-#     "values": [
-#         {"data": "Username"},
-#         {"data": "Full Name"},
-#         {"data": "Total Calls"},
-#     ]
-# }
+statistics_request_columns = {
+    "values": {
+        "data": [
+            "Username",
+            "Full Name",
+            "State", 
+            "State Since"
+        ]
+    }
+}
 
-# statistics = get_specific_statistics(
+# If you only need certain columns returned:
+# specific_statistics = get_specific_statistics(
 #     statistics_request_type,
 #     statistics_request_columns)
+
 
 statistics = get_statistics(statistics_request_type)
 
