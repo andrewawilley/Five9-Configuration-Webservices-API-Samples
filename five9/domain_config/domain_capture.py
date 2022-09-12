@@ -37,11 +37,6 @@ METHODS = [
     'getUserProfiles',
 ]
 
-METHODS = [
-
-    'getCampaignProfiles',
-]
-
 
 class Five9DomainConfig:
 
@@ -219,3 +214,6 @@ class Five9DomainConfig:
                         campaignProfile=profile["name"],
                         addOrderByField=self.domain_objects['getCampaignProfiles_campaign_profile_filters'][profile["name"]]["orderByFields"]
                     )
+
+    def sync_ivrScripts(self):
+        for profile in self.domain_objects['getCampaignProfiles']:
