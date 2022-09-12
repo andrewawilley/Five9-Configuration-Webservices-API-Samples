@@ -42,7 +42,9 @@ METHODS = [
     'getCampaignProfiles',
 ]
 
+
 class Five9DomainConfig:
+
 
     def __init__(self, client=None, username=None, password=None, account=None, sync_target_domain=None):
         self.client = None
@@ -62,6 +64,23 @@ class Five9DomainConfig:
         if self.client is not None:
             self.get_domain_objects()
     
+    def sync_to_target_domain(self, sync_objects=[]):
+        '''Method to run the domain object sync methods that are implemented.  If no sync_objects are provided, will run all sync methods'''
+
+
+        self.sync_methods = {
+            "campaignProfiles": self.sync_campaignProfiles,
+
+        }
+
+        if self.sync_target_domain is not None:
+            if len(sync_objects) == 0:
+                sync_objects = self.sync_methods.keys()
+            for sync_object in sync_objects:
+                sync_method = self.sync_methods[sync_object]
+                print(f'SYNC - {sync_object}')
+                sync_method()
+
     def getVCCConfiguration(self):
         self.vccConfig = self.client.service.getVCCConfiguration()
         self.domain_path = f'{REPO_PATH}\\{self.vccConfig.domainName}\\'
@@ -144,8 +163,6 @@ class Five9DomainConfig:
                                 self.write_json_to_target_path(f'{self.domain_path}{method}', self.domain_objects[method])
                                 self.get_config_object_detail(method, 'campaign_profile_filters', method_response, 'getCampaignProfileFilter')
                                 self.get_config_object_detail(method, 'campaign_profile_dispositions', method_response, 'getCampaignProfileDispositions')
-                                if self.sync_target_domain is not None:
-                                    self.sync_campaignProfiles()
 
                             elif method == 'getSkills':
                                 self.domain_objects[method] = zeep.helpers.serialize_object(method_response, dict)
@@ -185,9 +202,11 @@ class Five9DomainConfig:
                         removeCriteria=self.sync_target_domain.domain_objects['getCampaignProfiles_campaign_profile_filters'][profile["name"]]["crmCriteria"]
                     )
                     if len(self.sync_target_domain.domain_objects['getCampaignProfiles_campaign_profile_filters'][profile["name"]]["orderByFields"]) > 0:
+                        remove_fields = self.sync_target_domain.domain_objects['getCampaignProfiles_campaign_profile_filters'][profile["name"]]["orderByFields"]
+                        
                         self.sync_target_domain.client.service.modifyCampaignProfileFilterOrder(
-                            profileName=profile["name"],
-                            removeOrderByField=self.sync_target_domain.domain_objects['getCampaignProfiles_campaign_profile_filters'][profile["name"]]["orderByFields"]
+                            campaignProfile=profile["name"],
+                            removeOrderByField=[field['fieldName'] for field in remove_fields]
                         )
                     
                 self.sync_target_domain.client.service.modifyCampaignProfileCrmCriteria(
@@ -200,12 +219,3 @@ class Five9DomainConfig:
                         campaignProfile=profile["name"],
                         addOrderByField=self.domain_objects['getCampaignProfiles_campaign_profile_filters'][profile["name"]]["orderByFields"]
                     )
-
-
-# from domain_config import domain_capture
-
-# prod_domain = domain_capture.Five9DomainConfig(account='prod')
-# dev_domain = domain_capture.Five9DomainConfig(account='dev', sync_target_domain=prod_domain)
-
-
-
