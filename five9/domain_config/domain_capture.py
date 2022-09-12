@@ -36,12 +36,6 @@ METHODS = [
     'getSpeedDialNumbers',
     'getUserProfiles',
 ]
-# Order of aquisition matters for purpose of syncing
-METHODS = [
-
-    'getCampaignProfiles',
-
-]
 
 
 class Five9DomainConfig:
