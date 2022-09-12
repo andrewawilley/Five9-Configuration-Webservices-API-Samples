@@ -37,6 +37,10 @@ METHODS = [
     'getUserProfiles',
 ]
 
+METHODS = [
+
+    'getCampaignProfiles',
+]
 
 class Five9DomainConfig:
 
@@ -180,9 +184,28 @@ class Five9DomainConfig:
                         },
                         removeCriteria=self.sync_target_domain.domain_objects['getCampaignProfiles_campaign_profile_filters'][profile["name"]]["crmCriteria"]
                     )
+                    if len(self.sync_target_domain.domain_objects['getCampaignProfiles_campaign_profile_filters'][profile["name"]]["orderByFields"]) > 0:
+                        self.sync_target_domain.client.service.modifyCampaignProfileFilterOrder(
+                            profileName=profile["name"],
+                            removeOrderByField=self.sync_target_domain.domain_objects['getCampaignProfiles_campaign_profile_filters'][profile["name"]]["orderByFields"]
+                        )
                     
                 self.sync_target_domain.client.service.modifyCampaignProfileCrmCriteria(
                     profileName=profile["name"],
                     grouping=self.domain_objects['getCampaignProfiles_campaign_profile_filters'][profile["name"]]["grouping"],
                     addCriteria=self.domain_objects['getCampaignProfiles_campaign_profile_filters'][profile["name"]]["crmCriteria"]
                 )
+                if len(self.domain_objects['getCampaignProfiles_campaign_profile_filters'][profile["name"]]["orderByFields"]) > 0:
+                    self.sync_target_domain.client.service.modifyCampaignProfileFilterOrder(
+                        campaignProfile=profile["name"],
+                        addOrderByField=self.domain_objects['getCampaignProfiles_campaign_profile_filters'][profile["name"]]["orderByFields"]
+                    )
+
+
+# from domain_config import domain_capture
+
+# prod_domain = domain_capture.Five9DomainConfig(account='prod')
+# dev_domain = domain_capture.Five9DomainConfig(account='dev', sync_target_domain=prod_domain)
+
+
+
