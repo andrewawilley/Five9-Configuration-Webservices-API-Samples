@@ -216,4 +216,5 @@ class Five9DomainConfig:
                     )
 
     def sync_ivrScripts(self):
-        for profile in self.domain_objects['getCampaignProfiles']:
+        pass
+        # for profile in self.domain_objects['getCampaignProfiles']:
