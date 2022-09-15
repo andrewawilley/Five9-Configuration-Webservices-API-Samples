@@ -39,6 +39,8 @@ def demystify_filter(profile_filter, verbose=False):
     verbose=False by default, set True to spool output to console
     '''
     numbers = re.compile(r'(\d+)')
+    parens_open = "|||||"
+    parens_close = "+_+_+_+_"
     expression_operators = {
         "Equals": "=",
         "NotEqual": "!=",
@@ -52,10 +54,10 @@ def demystify_filter(profile_filter, verbose=False):
     grouping_expression = numbers.sub(r'[\1]', grouping_expression)
     for idx, criteria in enumerate(profile_filter["crmCriteria"]):
         i = idx+1
-        condition = f'{criteria["leftValue"]} {criteria["compareOperator"]} "{criteria["rightValue"]}"'
+        condition = f'{criteria["leftValue"]} {criteria["compareOperator"]} "{criteria["rightValue"].replace("(", parens_open).replace(")", parens_close)}"'
         # print(f'{i:03d}  {criteria["leftValue"]} {criteria["compareOperator"]} {criteria["rightValue"]}')
         grouping_expression = grouping_expression.replace(f'[{i}]', f'[{condition}][{i}]')
-    demystified = prettify(grouping_expression, "(", ")")
+    demystified = prettify(grouping_expression, "(", ")").replace(parens_open, "(").replace(parens_close, ")")
     if verbose == True:
         print(f'{demystified}')
     return demystified
