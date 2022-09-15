@@ -232,6 +232,8 @@ class Five9DomainConfig:
         os.makedirs(os.path.dirname(subfolder_path), exist_ok=True)
         for pf in profile_filters.keys():
             profile_filter = profile_filters[pf]
+            if verbose == True:
+                print(f"\n\n********** Demystifying {pf}")
             if(profile_filter['grouping']['type'] == "Custom") and len(profile_filter["crmCriteria"]) > 0:
                 demystified = demystify_filter(profile_filter, verbose=verbose)
                 self.write_object_to_target_path(

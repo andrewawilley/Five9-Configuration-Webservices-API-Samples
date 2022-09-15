@@ -29,9 +29,16 @@ if __name__ == '__main__':
         required=False,
         help='Alias for a stored credential object in private/credentials.py')
 
+    parser.add_argument(
+        '--verbose',
+        metavar='Stored credential alias',
+        type=bool,
+        required=False,
+        help='verbose level set true to see all the output')
+
     args = parser.parse_args()
 
     domain = domain_capture.Five9DomainConfig(username=args.username, password=args.password, account=args.account_alias, methods=["getCampaignProfiles"])
     domain.demystify_campaign_profile_filters(
-        # verbose=True
+        verbose=args.verbose or False
     )

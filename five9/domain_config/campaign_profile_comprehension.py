@@ -54,7 +54,8 @@ def demystify_filter(profile_filter, verbose=False):
     grouping_expression = numbers.sub(r'[\1]', grouping_expression)
     for idx, criteria in enumerate(profile_filter["crmCriteria"]):
         i = idx+1
-        condition = f'{criteria["leftValue"]} {criteria["compareOperator"]} "{criteria["rightValue"].replace("(", parens_open).replace(")", parens_close)}"'
+        rightValue = (criteria["rightValue"] or "null").replace("(", parens_open).replace(")", parens_close)
+        condition = f'{criteria["leftValue"]} {criteria["compareOperator"]} "{rightValue}"'
         # print(f'{i:03d}  {criteria["leftValue"]} {criteria["compareOperator"]} {criteria["rightValue"]}')
         grouping_expression = grouping_expression.replace(f'[{i}]', f'[{condition}][{i}]')
     demystified = prettify(grouping_expression, "(", ")").replace(parens_open, "(").replace(parens_close, ")")
