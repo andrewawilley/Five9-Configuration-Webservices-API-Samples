@@ -7,6 +7,7 @@ import git
 import zeep
 
 import five9_session
+from .campaign_profile_comprehension import demystify_filter
 
 API_SLEEP_INTERVAL  = .3
 
@@ -41,7 +42,7 @@ METHODS = [
 class Five9DomainConfig:
 
 
-    def __init__(self, client=None, username=None, password=None, account=None, sync_target_domain=None):
+    def __init__(self, client=None, username=None, password=None, account=None, sync_target_domain=None, methods=METHODS):
         self.client = None
         self.domain_objects = {}
         self.domain_path = f'{REPO_PATH}'
@@ -57,7 +58,7 @@ class Five9DomainConfig:
             self.client = client
 
         if self.client is not None:
-            self.get_domain_objects()
+            self.get_domain_objects(methods=methods)
     
     def sync_to_target_domain(self, sync_objects=[]):
         '''Method to run the domain object sync methods that are implemented.  If no sync_objects are provided, will run all sync methods'''
@@ -96,12 +97,16 @@ class Five9DomainConfig:
         #     git.Repo.init(REPO_PATH, bare=False)
         #     self.repo = git.Repo(self.repo_path)
     
-    def write_json_to_target_path(self, target_path, domain_object, sort_keys=True, indent=4):
-        jsonString = json.dumps(domain_object, sort_keys=sort_keys, indent=indent)
-        # try:
-        jsonFile = open(f'{target_path}.json', 'w')
-        jsonFile.write(jsonString)
-        jsonFile.close()
+    def write_object_to_target_path(self, target_path, domain_object, sort_keys=True, indent=4, toJson=True, filetype="txt"):
+        output_string = ""
+        if toJson == True:
+            filetype = 'json'
+            output_string = json.dumps(domain_object, sort_keys=sort_keys, indent=indent)
+        else:
+            output_string = domain_object
+        outputFile = open(f'{target_path}.{filetype}', 'w')
+        outputFile.write(output_string)
+        outputFile.close()
         return True
         # except: 
         #     return False
@@ -121,7 +126,7 @@ class Five9DomainConfig:
                 # print(domain_object)
             self.domain_objects[f'{parent_method_name}_{subfolder_name}'][object_name] = zeep.helpers.serialize_object(domain_object, dict)
             target_path = f'{subfolder_path}\\{object_name}'
-            self.write_json_to_target_path(target_path, self.domain_objects[f'{parent_method_name}_{subfolder_name}'][object_name])
+            self.write_object_to_target_path(target_path, self.domain_objects[f'{parent_method_name}_{subfolder_name}'][object_name])
 
     def get_domain_objects(self, methods=METHODS):
         if self.client is not None:
@@ -147,7 +152,7 @@ class Five9DomainConfig:
 
                             elif method == 'getCampaigns':
                                 self.domain_objects[method] = zeep.helpers.serialize_object(method_response, dict)
-                                self.write_json_to_target_path(f'{self.domain_path}{method}', self.domain_objects[method])
+                                self.write_object_to_target_path(f'{self.domain_path}{method}', self.domain_objects[method])
                                 method_response = vcc_method(campaignType='OUTBOUND')
                                 self.get_config_object_detail(method, 'campaigns_outbound', method_response, 'getOutboundCampaign')
                                 method_response = vcc_method(campaignType='INBOUND')
@@ -155,18 +160,18 @@ class Five9DomainConfig:
                             
                             elif method == 'getCampaignProfiles':
                                 self.domain_objects[method] = zeep.helpers.serialize_object(method_response, dict)
-                                self.write_json_to_target_path(f'{self.domain_path}{method}', self.domain_objects[method])
+                                self.write_object_to_target_path(f'{self.domain_path}{method}', self.domain_objects[method])
                                 self.get_config_object_detail(method, 'campaign_profile_filters', method_response, 'getCampaignProfileFilter')
-                                self.get_config_object_detail(method, 'campaign_profile_dispositions', method_response, 'getCampaignProfileDispositions')
+                                # self.get_config_object_detail(method, 'campaign_profile_dispositions', method_response, 'getCampaignProfileDispositions')
 
                             elif method == 'getSkills':
                                 self.domain_objects[method] = zeep.helpers.serialize_object(method_response, dict)
-                                self.write_json_to_target_path(f'{self.domain_path}{method}', self.domain_objects[method])
+                                self.write_object_to_target_path(f'{self.domain_path}{method}', self.domain_objects[method])
                                 self.get_config_object_detail(method, 'skills_info', method_response, 'getSkillsInfo')
 
                             else:
                                 self.domain_objects[method] = zeep.helpers.serialize_object(method_response, dict)
-                                self.write_json_to_target_path(f'{self.domain_path}{method}', self.domain_objects[method])
+                                self.write_object_to_target_path(f'{self.domain_path}{method}', self.domain_objects[method])
 
                         except zeep.exceptions.Fault as e:
                             print(e)
@@ -218,3 +223,19 @@ class Five9DomainConfig:
     def sync_ivrScripts(self):
         pass
         # for profile in self.domain_objects['getCampaignProfiles']:
+
+    def demystify_campaign_profile_filters(self, reload_domain=False, verbose=False):
+        if reload_domain == True:
+            self.get_domain_objects(methods=['getCampaignProfiles'])
+        profile_filters = self.domain_objects["getCampaignProfiles_campaign_profile_filters"]
+        subfolder_path = f'{self.domain_path}\\campaign_profile_filters_demystified\\'
+        os.makedirs(os.path.dirname(subfolder_path), exist_ok=True)
+        for pf in profile_filters.keys():
+            profile_filter = profile_filters[pf]
+            if(profile_filter['grouping']['type'] == "Custom") and len(profile_filter["crmCriteria"]) > 0:
+                demystified = demystify_filter(profile_filter, verbose=verbose)
+                self.write_object_to_target_path(
+                    target_path=f'{subfolder_path}{pf}',
+                    domain_object=demystified,
+                    toJson=False
+                )
