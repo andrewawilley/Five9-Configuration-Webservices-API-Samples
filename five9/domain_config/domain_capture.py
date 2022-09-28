@@ -163,6 +163,7 @@ class Five9DomainConfig:
                                 self.write_object_to_target_path(f'{self.domain_path}{method}', self.domain_objects[method])
                                 self.get_config_object_detail(method, 'campaign_profile_filters', method_response, 'getCampaignProfileFilter')
                                 # self.get_config_object_detail(method, 'campaign_profile_dispositions', method_response, 'getCampaignProfileDispositions')
+                                self.demystify_campaign_profile_filters()
 
                             elif method == 'getSkills':
                                 self.domain_objects[method] = zeep.helpers.serialize_object(method_response, dict)
@@ -184,7 +185,7 @@ class Five9DomainConfig:
     def sync_campaignProfiles(self):
         for profile in self.domain_objects['getCampaignProfiles']:
             description = profile['description'] or ''
-            if description.find('sync') > -1:
+            if description.find('--sync') > -1:
                 try:
                     self.sync_target_domain.client.service.createCampaignProfile(profile)
                     print(f'\t\t\tSYNC (create): {profile["name"]}')

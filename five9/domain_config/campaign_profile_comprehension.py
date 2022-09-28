@@ -1,4 +1,3 @@
-from domain_config import domain_capture
 import re
 
 
@@ -55,10 +54,74 @@ def demystify_filter(profile_filter, verbose=False):
     for idx, criteria in enumerate(profile_filter["crmCriteria"]):
         i = idx+1
         rightValue = (criteria["rightValue"] or "null").replace("(", parens_open).replace(")", parens_close)
-        condition = f'{criteria["leftValue"]} {criteria["compareOperator"]} "{rightValue}"'
+        condition = f'{criteria["leftValue"]} ::{criteria["compareOperator"]}:: {rightValue}'
         # print(f'{i:03d}  {criteria["leftValue"]} {criteria["compareOperator"]} {criteria["rightValue"]}')
         grouping_expression = grouping_expression.replace(f'[{i}]', f'[{condition}][{i}]')
     demystified = prettify(grouping_expression, "(", ")").replace(parens_open, "(").replace(parens_close, ")")
     if verbose == True:
         print(f'{demystified}')
     return demystified
+
+def remystify_filter(nice_filter):
+    nice_filter = re.sub(r'(\[([0-9]*)\])', '', nice_filter)
+    condition_pattern = re.compile('\[(.*?)\]')
+    # condition_pattern = re.compile('\[(.*?)\]\[([0-9]*)\]')
+    conditions = condition_pattern.finditer(nice_filter)
+
+    unique_conditions = []
+    crmCriteria = []
+    new_grouping_expression = nice_filter
+
+    for c in conditions:
+        b = c.span()[0]
+        e = c.span()[1]
+        cond = nice_filter[b:e]
+        unique_condition = cond.split("]")[0][1:]
+        
+        if unique_condition not in unique_conditions:
+            unique_conditions.append(unique_condition)
+
+    unique_conditions.sort(key=lambda v: v.upper())
+
+    for unique_condition in unique_conditions:
+        criteria = unique_condition.split("::")
+        compareOperator = criteria[1]
+        leftValue = criteria[0][:-1]
+        rightValue = criteria[2][1:]
+        crmCriteria.append({
+            "compareOperator": compareOperator,
+            "leftValue": leftValue,
+            "rightValue": rightValue
+        })
+
+    # new_grouping_expression = re.sub(r'(\[([0-9]*)\])', '', new_grouping_expression)
+    for idx, condition in enumerate(unique_conditions):
+        new_grouping_expression = re.sub(condition, f'{idx+1}', new_grouping_expression)
+
+    new_grouping_expression = new_grouping_expression.replace(
+        '[', '').replace(
+        ']', '').replace(
+        '\n', ' ').replace(
+        '\t', ' ').strip()
+
+    while new_grouping_expression.find('  ') > -1:
+        new_grouping_expression = new_grouping_expression.replace('  ', ' ')
+
+
+    for idx, condition in enumerate(unique_conditions):
+        print(f'{idx+1:02} {condition}')
+
+    # for idx, condition in enumerate(crmCriteria):
+    #     print(f'{idx+1:02} {condition}')
+
+    print(new_grouping_expression)
+
+    return {
+        "crmCriteria": crmCriteria,
+        "grouping": {
+            "expression": new_grouping_expression,
+            "type": "Custom"
+        },
+        "orderByFields": []
+    }
+
