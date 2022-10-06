@@ -182,6 +182,9 @@ class Five9DomainConfig:
         else:
             print('No active client object available to connect with Five9 VCC')
     
+    def sync_contactFields(self):
+        pass
+
     def sync_campaignProfiles(self):
         for profile in self.domain_objects['getCampaignProfiles']:
             description = profile['description'] or ''

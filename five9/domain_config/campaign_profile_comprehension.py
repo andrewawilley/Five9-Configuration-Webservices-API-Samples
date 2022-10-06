@@ -81,13 +81,15 @@ def remystify_filter(nice_filter):
         if unique_condition not in unique_conditions:
             unique_conditions.append(unique_condition)
 
-    unique_conditions.sort(key=lambda v: v.upper())
+    # unique_conditions.sort(key=lambda v: v.upper())
 
     for unique_condition in unique_conditions:
         criteria = unique_condition.split("::")
         compareOperator = criteria[1]
         leftValue = criteria[0][:-1]
         rightValue = criteria[2][1:]
+        if rightValue == "null":
+            rightValue = None
         crmCriteria.append({
             "compareOperator": compareOperator,
             "leftValue": leftValue,
