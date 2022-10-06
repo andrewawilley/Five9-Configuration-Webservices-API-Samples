@@ -1,4 +1,7 @@
+import collections
+import json
 import random
+import re
 import string
 
 def get_random_password(length=20, required_digits=2, required_lower=2, required_caps=2, required_special=1, \
@@ -44,3 +47,29 @@ def get_random_password(length=20, required_digits=2, required_lower=2, required
     # print(f'{password_base} {password_lower} {password_caps} {password_digits} {password_spec} = {password}')
     return password
 
+def ivr_variable_usage(ivrs, verbose=False):
+
+    ivr_variables = {}
+
+    script_variable_pattern = re.compile(r'(?<=<variableName>)(.*?)(?=<\/variableName>)')
+    for ivr in ivrs:
+        if 'EXAMPLE' in ivr.name:
+            continue
+        script_variables = script_variable_pattern.finditer(ivr.xmlDefinition)
+        for var in script_variables:
+            b = var.span()[0]
+            e = var.span()[1]
+            variable = ivr.xmlDefinition[b:e]
+            variable_parts = variable.split(".")
+            if len(variable_parts) > 1:
+                if ivr_variables.get(variable, None) == None:
+                    ivr_variables[variable] = []
+                if ivr.name not in ivr_variables[variable]:
+                    ivr_variables[variable].append(ivr.name)
+
+    ivr_variables = collections.OrderedDict(sorted(ivr_variables.items()))
+    if verbose == True:
+        j = json.dumps(ivr_variables, indent=4)
+        print(j)
+
+    return ivr_variables
