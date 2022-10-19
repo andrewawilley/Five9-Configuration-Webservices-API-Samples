@@ -126,4 +126,3 @@ def remystify_filter(nice_filter):
         },
         "orderByFields": []
     }
-
