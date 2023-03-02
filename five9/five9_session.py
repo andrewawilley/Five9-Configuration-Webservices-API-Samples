@@ -5,20 +5,37 @@ from zeep.plugins import HistoryPlugin
 
 from private.credentials import ACCOUNTS
 
-# This function prints the SOAP envelope for the request and/or response
-def latest_envelopes(history):
-    envelopes = ""
-    try:
-        for hist in [history.last_sent, history.last_received]:
-            e = etree.tostring(hist["envelope"], encoding="unicode", pretty_print=True)
-            envelopes += e + '\n\n'
-            print(e)
-    except (IndexError, TypeError):
-        # catch cases where it fails before being put on the wire
-        pass
-    
+class Five9Client(zeep.Client):
+
+    def latest_envelopes(self):
+        '''
+        Returns the latest SOAP envelopes that were sent or received by the client as a string.
+
+        Returns:
+            A string containing the latest SOAP envelopes that were sent or received by the client.
+            If no envelopes are available, an empty string is returned.
+        '''
+        envelopes = ""
+        try:
+            for hist in [self.history.last_sent, self.history.last_received]:
+                e = etree.tostring(hist["envelope"], encoding="unicode", pretty_print=True)
+                envelopes += e + '\n\n'
+                print(e)
+        except (IndexError, TypeError):
+            # catch cases where it fails before being put on the wire
+            pass
+
+    def __init__(self, wsdl_url, *args, **kwargs):
+        for plugin in kwargs['plugins']:
+            if isinstance(plugin, zeep.plugins.HistoryPlugin):
+                self.history = plugin
+        super().__init__(wsdl_url, *args, **kwargs)
+
+
+
 def get_client(five9username=None, five9password=None, account=None):
     # initialize the zeep history object
+    
     history = HistoryPlugin()
 
     # url and user settings consolidated here for convenience to use later
@@ -43,20 +60,16 @@ def get_client(five9username=None, five9password=None, account=None):
     session = requests.Session()
     session.auth = requests.auth.HTTPBasicAuth(five9username, five9password)
     try:
-        client = zeep.Client(
+        client = Five9Client(
             settings['FIVENINE_CONFIG_WEBSERVICES_API'].format(
                 five9username=five9username),
             transport=zeep.Transport(session=session),
             plugins=[history,]
         )
-        print(f'Authenticated as {five9username}')
+        # Note the client is not yet authenticated
+        print(f'Client ready for {five9username}')
     except requests.exceptions.HTTPError as e:
         client = None
         print(e)
-
-    # last envelopes can be printed with
-    # client.latest_envelopes(client.history)
-    client.history = history
-    client.latest_envelopes = latest_envelopes
 
     return client
