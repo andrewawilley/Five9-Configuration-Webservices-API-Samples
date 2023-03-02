@@ -123,6 +123,7 @@ class Five9DomainConfig:
             if vcc_method is not None:
                 sub_method = getattr(self.client.service, vcc_method)
                 domain_object = sub_method(object_name)
+                time.sleep(.3)
                 # print(domain_object)
             self.domain_objects[f'{parent_method_name}_{subfolder_name}'][object_name] = zeep.helpers.serialize_object(domain_object, dict)
             target_path = f'{subfolder_path}\\{object_name}'
