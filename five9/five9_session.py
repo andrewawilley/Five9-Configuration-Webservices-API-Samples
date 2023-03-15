@@ -27,6 +27,9 @@ class Five9Client(zeep.Client):
             # catch cases where it fails before being put on the wire
             pass
 
+    # TODO class method to obtain the domain rate limits to update a class property 
+    # that helps bake in a delay between requests if needed
+
     def __init__(self, wsdl_url, *args, **kwargs):
         for plugin in kwargs["plugins"]:
             if isinstance(plugin, zeep.plugins.HistoryPlugin):
@@ -35,6 +38,17 @@ class Five9Client(zeep.Client):
 
 
 def get_client(five9username=None, five9password=None, account=None):
+    """
+    Creates and returns a Five9 API client object with the specified credentials.
+
+    Args:
+        five9username (str, optional): The Five9 API username. If not provided, it will be obtained from the `ACCOUNTS` dictionary in `private.credentials`. Defaults to None.
+        five9password (str, optional): The Five9 API password. If not provided, it will be obtained from the `ACCOUNTS` dictionary in `private.credentials`. Defaults to None.
+        account (str, optional): The name of the Five9 account to use. If not provided, it will default to the account with the alias "default_account" in `private.credentials`. Defaults to None.
+
+    Returns:
+        Five9Client: A Five9 API client object authenticated with the specified credentials.
+    """
     # initialize the zeep history object
 
     history = HistoryPlugin()
