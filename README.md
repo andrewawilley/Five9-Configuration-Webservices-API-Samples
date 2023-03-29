@@ -42,3 +42,9 @@ After activating the virtual evnironment and starting a python shell, an authent
 This will return an authenticated client object that can invoke any of the API endpoints.  For example:
 
     call_variables = client.service.getCallVariables()
+
+The most recent SOAP envelope content can be retrieved with 
+
+    envelopes = client.latest_envelopes(verbose=True)
+
+The verbose option defaults to false, if true the envelopes will output to the shell.

@@ -7,7 +7,7 @@ from private.credentials import ACCOUNTS
 
 class Five9Client(zeep.Client):
 
-    def latest_envelopes(self):
+    def latest_envelopes(self, verbose=True):
         '''
         Returns the latest SOAP envelopes that were sent or received by the client as a string.
 
@@ -20,10 +20,13 @@ class Five9Client(zeep.Client):
             for hist in [self.history.last_sent, self.history.last_received]:
                 e = etree.tostring(hist["envelope"], encoding="unicode", pretty_print=True)
                 envelopes += e + '\n\n'
-                print(e)
+                if verbose:
+                    print(e)
         except (IndexError, TypeError):
             # catch cases where it fails before being put on the wire
             pass
+
+        return envelopes
 
     def __init__(self, wsdl_url, *args, **kwargs):
         for plugin in kwargs['plugins']:
