@@ -1,5 +1,6 @@
 import argparse
 import csv
+from datetime import datetime
 
 import five9_session
 
@@ -67,18 +68,42 @@ if __name__ == "__main__":
         "-p", "--password", help="Five9 Password for authentication", required=False
     )
     parser.add_argument(
+        "-a",
+        "--account",
+        help="Alias for credential stored in private/credentials",
+        required=False,
+    )
+    parser.add_argument(
         "-fn", "--filename", help="Target Five9 Report Folder", required=False
     )
     args = vars(parser.parse_args())
 
-    five9_username = args["username"]
+    five9_username = args["username"] or None
+    five9_password = args["password"] or None
+    five9_account = args["account"] or None
+
+    # Set the target filename to private/users_{yyyy-mm-dd}.csv
+    target_filename = (
+        args["filename"] or f"private/users_{datetime.now().strftime('%Y-%m-%d')}.csv"
+    )
 
     # Get the Five9 API client
-    client = five9_session.get_client()
+    client = five9_session.get_client(
+        five9username=five9_username,
+        five9password=five9_password,
+        account=five9_account,
+    )
 
-    target_generalInfo_fields  = ['firstName', 'lastName', 'EMail', 'active']
-    target_permissions = {"agent": ["ManageAvailabilityBySkill", "CallForwarding"]}
+    # Specify the general user fields to include in the CSV file
+    target_generalInfo_fields = ["firstName", "lastName", "EMail", "active"]
+
+    # Specify any role keys and permission types to include in the CSV file
+    # target_permissions = {"agent": ["ManageAvailabilityBySkill", "CallForwarding"]}
+    target_permissions = {"agent": ["ManageAvailabilityBySkill"]}
 
     capture_user_details(
-        client, target_permissions=target_permissions,  target_generalInfo_fields=target_generalInfo_fields, target_filename="private/users.csv"
+        client,
+        target_permissions=target_permissions,
+        target_generalInfo_fields=target_generalInfo_fields,
+        target_filename=target_filename,
     )
