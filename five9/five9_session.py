@@ -7,9 +7,8 @@ from private.credentials import ACCOUNTS
 
 
 class Five9Client(zeep.Client):
-
     def latest_envelopes(self):
-        '''
+        """
         Returns the latest SOAP envelopes that were sent or received by the client as a string.
 
         Returns:
@@ -19,12 +18,17 @@ class Five9Client(zeep.Client):
         envelopes = ""
         try:
             for hist in [self.history.last_sent, self.history.last_received]:
-                e = etree.tostring(hist["envelope"], encoding="unicode", pretty_print=True)
-                envelopes += e + '\n\n'
+                e = etree.tostring(
+                    hist["envelope"], encoding="unicode", pretty_print=True
+                )
+                envelopes += e + "\n\n"
                 print(e)
         except (IndexError, TypeError):
             # catch cases where it fails before being put on the wire
             pass
+
+    # TODO class method to obtain the domain rate limits to update a class property 
+    # that helps bake in a delay between requests if needed
 
     def __init__(self, wsdl_url, *args, **kwargs):
         for plugin in kwargs["plugins"]:
