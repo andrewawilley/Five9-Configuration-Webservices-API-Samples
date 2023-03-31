@@ -53,7 +53,7 @@ class Five9DomainConfig:
         self.sync_target_domain = sync_target_domain
 
         if client is None:
-            self.client = five9_session.get_client(five9username=username, five9password=password, account=account)
+            self.client = five9_session.Five9Client(five9username=username, five9password=password, account=account)
         else:
             self.client = client
 

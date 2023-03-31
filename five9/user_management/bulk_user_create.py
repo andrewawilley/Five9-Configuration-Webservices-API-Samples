@@ -6,7 +6,7 @@ import five9_session
 
 from util import get_random_password
 
-client = five9_session.get_client()
+client = five9_session.Five9Client()
 
 
 # add in all the username/password combos with the required fields below

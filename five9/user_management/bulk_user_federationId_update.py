@@ -6,7 +6,7 @@ from tqdm import tqdm
 import zeep
 
 
-client = five9_session.get_client()
+client = five9_session.Five9Client()
 # Read CSV file and populate a dictionary of usernames to lookup federationIds
 user_federation_Ids = {}
 

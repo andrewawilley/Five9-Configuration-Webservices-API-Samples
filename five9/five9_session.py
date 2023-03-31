@@ -6,7 +6,60 @@ from zeep.plugins import HistoryPlugin
 from private.credentials import ACCOUNTS
 
 
+class Five9ClientCreationError(Exception):
+    pass
+
+
 class Five9Client(zeep.Client):
+    call_counters = None
+    history = None
+
+    def __init__(self, *args, **kwargs):
+        five9username = kwargs.get("five9username", None)
+        five9password = kwargs.get("five9password", None)
+        account = kwargs.get("account", None)
+        api_hostname = kwargs.get("api_hostname", "api.five9.com")
+        api_version = kwargs.get("api_version", "v12")
+
+        self.history = HistoryPlugin()
+
+        # url and user settings consolidated here for convenience to use later
+        api_definition_base = "https://{api_hostname}/wsadmin/{api_version}/?wsdl&user={five9username}"
+        
+
+        if five9username == None and five9password == None:
+            # Target the desired account using the alias in private.credentials
+            api_account_alias = account or "default_account"
+            api_account = ACCOUNTS.get(api_account_alias, {})
+
+            five9username = api_account.get("username", None)
+            five9password = api_account.get("password", None)
+
+        # prepare the session with BasicAuth headers
+        self.transport_session = requests.Session()
+        self.transport_session.auth = requests.auth.HTTPBasicAuth(five9username, five9password)
+
+        self.api_definition = api_definition_base.format(
+            api_hostname=api_hostname, api_version=api_version, five9username=five9username
+        )
+        # print(api_definition)
+
+        try:
+            super().__init__(
+                self.api_definition,
+                transport=zeep.Transport(session=self.transport_session),
+                plugins=[self.history],
+            )
+            self.call_counters = self.service.getCallCountersState()
+            print(f"Client ready for {five9username}")
+
+        # handle generic http errors
+        except (requests.exceptions.HTTPError, requests.exceptions.ConnectionError, zeep.exceptions.Fault) as e:
+            # pass the error to the caller through the Five9ClientCreationError exception
+            raise Five9ClientCreationError(e)
+
+
+    @property
     def latest_envelopes(self):
         """
         Returns the latest SOAP envelopes that were sent or received by the client as a string.
@@ -22,71 +75,26 @@ class Five9Client(zeep.Client):
                     hist["envelope"], encoding="unicode", pretty_print=True
                 )
                 envelopes += e + "\n\n"
-                print(e)
-        except (IndexError, TypeError):
-            # catch cases where it fails before being put on the wire
-            pass
+            return envelopes
+        except (AttributeError, IndexError, TypeError):
+            # catch cases where the history object was altered to an invalid type
+            # re-initialize the history object
+            envelopes = "History object not found.  Re-initializing the history object.\n\n"
+            self.history = HistoryPlugin()
 
-    # TODO class method to obtain the domain rate limits to update a class property 
+            return envelopes
+
+    # TODO class method to obtain the domain rate limits to update a class property
     # that helps bake in a delay between requests if needed
 
-    def __init__(self, wsdl_url, *args, **kwargs):
-        for plugin in kwargs["plugins"]:
-            if isinstance(plugin, zeep.plugins.HistoryPlugin):
-                self.history = plugin
-        super().__init__(wsdl_url, *args, **kwargs)
 
-
-def get_client(five9username=None, five9password=None, account=None):
-    """
-    Creates and returns a Five9 API client object with the specified credentials.
-
-    Args:
-        five9username (str, optional): The Five9 API username. If not provided, it will be obtained from the `ACCOUNTS` dictionary in `private.credentials`. Defaults to None.
-        five9password (str, optional): The Five9 API password. If not provided, it will be obtained from the `ACCOUNTS` dictionary in `private.credentials`. Defaults to None.
-        account (str, optional): The name of the Five9 account to use. If not provided, it will default to the account with the alias "default_account" in `private.credentials`. Defaults to None.
-
-    Returns:
-        Five9Client: A Five9 API client object authenticated with the specified credentials.
-    """
-    # initialize the zeep history object
-
-    history = HistoryPlugin()
-
-    # url and user settings consolidated here for convenience to use later
-    settings = {
-        "FIVENINE_CONFIG_WEBSERVICES_API": "https://api.five9.com/wsadmin/v12/?wsdl&user={five9username}",
-    }
-
-    if five9username == None and five9password == None:
-        # Target the desired account using the alias in private.credentials
-        api_account_alias = account or "default_account"
-        api_account = ACCOUNTS.get(api_account_alias, {})
-
-        if api_account.get("username", None) in [None, "apiUserUsername"]:
-            five9username = input("Enter Username: ")
-            five9password = input("Enter Password: ")
-        else:
-            five9username = api_account.get("username", None)
-            five9password = api_account.get("password", None)
-
-    # prepare the session with BasicAuth headers
-    session = requests.Session()
-    session.auth = requests.auth.HTTPBasicAuth(five9username, five9password)
-    try:
-        client = Five9Client(
-            settings["FIVENINE_CONFIG_WEBSERVICES_API"].format(
-                five9username=five9username
-            ),
-            transport=zeep.Transport(session=session),
-            plugins=[
-                history,
-            ],
-        )
-        # Note the client is not yet authenticated
-        print(f"Client ready for {five9username}")
-    except requests.exceptions.HTTPError as e:
-        client = None
-        print(e)
-
-    return client
+    def print_available_service_methods(self, print_methods=True):
+        """
+        Prints the available methods for the client.
+        """
+        print("Available methods:")
+        # create sorted list of methods from the service
+        methods = sorted(self.service._operations.keys())
+        for method in methods:
+            print(f"\t{method}")
+    
