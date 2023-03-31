@@ -7,7 +7,7 @@ import zeep
 import five9_session
 
 
-client = five9_session.get_client()
+client = five9_session.Five9Client()
 
 # populate a list of usernames to manage the skills for
 users_to_update = [

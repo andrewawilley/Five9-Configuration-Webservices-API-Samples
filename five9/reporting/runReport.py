@@ -7,7 +7,7 @@ import zeep
 import five9_session
 
 
-client = five9_session.get_client()
+client = five9_session.Five9Client()
 
 # Change to your target dates and target folder / report name.
 # These folder and report names come from

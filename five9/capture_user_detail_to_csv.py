@@ -88,7 +88,7 @@ if __name__ == "__main__":
     )
 
     # Get the Five9 API client
-    client = five9_session.get_client(
+    client = five9_session.Five9Client(
         five9username=five9_username,
         five9password=five9_password,
         account=five9_account,
