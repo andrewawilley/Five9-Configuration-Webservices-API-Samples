@@ -7,7 +7,7 @@ import zeep
 import five9_session
 from .campaign_profile_comprehension import demystify_filter
 
-API_SLEEP_INTERVAL  = .3
+API_SLEEP_INTERVAL = 0.3
 
 REPO_PATH = "domain_snapshots"
 
@@ -17,32 +17,38 @@ METHOD_DEFAULT_ARGS = {
 
 # Order of aquisition matters for purpose of syncing
 METHODS = [
-    'getAvailableLocales',
-    'getDialingRules',
-    'getSkills',
-    'getPrompts',
-    'getDispositions',
-    'getWebConnectors',
-    'getCallVariableGroups',
-    'getCallVariables',
-    'getContactFields',
-
-    'getAgentGroups',
-    'getCampaignProfiles',
-    'getCampaigns',
-    
-    'getIVRScripts',
-    'getSpeedDialNumbers',
-    'getUserProfiles',
+    "getAvailableLocales",
+    "getDialingRules",
+    "getSkills",
+    "getPrompts",
+    "getDispositions",
+    "getWebConnectors",
+    "getCallVariableGroups",
+    "getCallVariables",
+    "getContactFields",
+    "getAgentGroups",
+    "getCampaignProfiles",
+    "getCampaigns",
+    "getIVRScripts",
+    "getSpeedDialNumbers",
+    "getUserProfiles",
 ]
 
 METHOD_DEPENDENCIES = {
-    'getCampaignProfiles': ['getCampaigns'],
+    "getCampaignProfiles": ["getCampaigns"],
 }
 
 
 class Five9DomainConfig:
-    def __init__(self, client=None, username=None, password=None, account=None, sync_target_domain=None, methods=METHODS):
+    def __init__(
+        self,
+        client=None,
+        username=None,
+        password=None,
+        account=None,
+        sync_target_domain=None,
+        methods=METHODS,
+    ):
         self.client = None
         self.domain_objects = {}
         # set the domain path to the current workign directory + domain_snapshots
@@ -54,7 +60,9 @@ class Five9DomainConfig:
         self.sync_target_domain = sync_target_domain
 
         if client is None:
-            self.client = five9_session.Five9Client(five9username=username, five9password=password, account=account)
+            self.client = five9_session.Five9Client(
+                five9username=username, five9password=password, account=account
+            )
         else:
             self.client = client
 
@@ -65,12 +73,11 @@ class Five9DomainConfig:
                     for dependency in METHOD_DEPENDENCIES[method]:
                         if dependency not in methods:
                             methods.append(dependency)
-                
-            self.get_domain_objects(methods=methods)
-    
-    def sync_to_target_domain(self, sync_objects=[]):
-        '''Method to run the domain object sync methods that are implemented.  If no sync_objects are provided, will run all sync methods'''
 
+            self.get_domain_objects(methods=methods)
+
+    def sync_to_target_domain(self, sync_objects=[]):
+        """Method to run the domain object sync methods that are implemented.  If no sync_objects are provided, will run all sync methods"""
 
         self.sync_methods = {
             "campaignProfiles": self.sync_campaignProfiles,
@@ -81,151 +88,246 @@ class Five9DomainConfig:
                 sync_objects = self.sync_methods.keys()
             for sync_object in sync_objects:
                 sync_method = self.sync_methods[sync_object]
-                print(f'SYNC - {sync_object}')
+                print(f"SYNC - {sync_object}")
                 sync_method()
 
     def getVCCConfiguration(self):
         self.vccConfig = self.client.service.getVCCConfiguration()
-        
-        self.domain_path = os.path.join(
-            os.path.dirname(__file__), 
-            "domain_snapshots", 
-            f'{self.vccConfig.domainName}_{time.strftime("%Y%m%d_%H%M%S")}'
-        )
-        print(self.domain_path)
-        print(f'\nAcquiring configuration for domain:\n{self.vccConfig.domainName}\n')
 
-        os.makedirs(os.path.dirname(f'{self.domain_path}'), exist_ok=True)
-    
+        self.domain_path = os.path.join(
+            os.path.dirname(__file__),
+            "domain_snapshots",
+            f"{self.vccConfig.domainName}",
+        )
+
+        print(self.domain_path)
+        print(f"\nAcquiring configuration for domain:\n{self.vccConfig.domainName}\n")
+
+        os.makedirs(os.path.dirname(self.domain_path), exist_ok=True)
 
     # TODO - Add logic to check if repo exists and if so, pull latest, else create new repo
-    
-    def write_object_to_target_path(self, target_path, domain_object, sort_keys=True, indent=4, toJson=True, filetype="txt"):
+
+    def write_object_to_target_path(
+        self,
+        target_path,
+        domain_object,
+        sort_keys=True,
+        indent=4,
+        toJson=True,
+        filetype="txt",
+    ):
         output_string = ""
         if toJson == True:
-            filetype = 'json'
-            output_string = json.dumps(domain_object, sort_keys=sort_keys, indent=indent)
+            filetype = "json"
+            output_string = json.dumps(
+                domain_object, sort_keys=sort_keys, indent=indent
+            )
         else:
             output_string = domain_object
-        outputFile = open(f'{target_path}.{filetype}', 'w')
+            print(f"\n\nTRYING TO WRITE TO FILE\n{target_path}.{filetype}\n\n")
+        outputFile = open(f"{target_path}.{filetype}", "w")
         outputFile.write(output_string)
         outputFile.close()
         return True
-        # except: 
+        # except:
         #     return False
 
-    def get_config_object_detail(self, parent_method_name, subfolder_name, method_response=None, vcc_method=None):
-        subfolder_path = f'{self.domain_path}/{subfolder_name}/'
+    def get_config_object_detail(
+        self, parent_method_name, subfolder_name, method_response=None, vcc_method=None
+    ):
+        subfolder_path = os.path.join(self.domain_path, subfolder_name)
+        print(f"\n******Creating Subfolder: {subfolder_path}")
         os.makedirs(os.path.dirname(subfolder_path), exist_ok=True)
-        print(f'\n\t{parent_method_name} - {subfolder_name}')
-        self.domain_objects[f'{parent_method_name}_{subfolder_name}'] = {}
-        
+        print(f"\n\t{parent_method_name} - {subfolder_name}")
+        self.domain_objects[f"{parent_method_name}_{subfolder_name}"] = {}
+
         for domain_object in method_response:
             object_name = domain_object.name
-            print(f'\t\t{object_name}')
+            print(f"\t\t{object_name}")
             if vcc_method is not None:
                 sub_method = getattr(self.client.service, vcc_method)
                 domain_object = sub_method(object_name)
-                time.sleep(.3)
+                time.sleep(0.3)
                 # print(domain_object)
-            self.domain_objects[f'{parent_method_name}_{subfolder_name}'][object_name] = zeep.helpers.serialize_object(domain_object, dict)
-            target_path = f'{subfolder_path}/{object_name}'
-            self.write_object_to_target_path(target_path, self.domain_objects[f'{parent_method_name}_{subfolder_name}'][object_name])
+            self.domain_objects[f"{parent_method_name}_{subfolder_name}"][
+                object_name
+            ] = zeep.helpers.serialize_object(domain_object, dict)
+            target_path = os.path.join(subfolder_path, object_name)
+            os.makedirs(os.path.dirname(target_path), exist_ok=True)
+            self.write_object_to_target_path(
+                target_path,
+                self.domain_objects[f"{parent_method_name}_{subfolder_name}"][
+                    object_name
+                ],
+            )
 
     def get_domain_objects(self, methods=METHODS):
         if self.client is not None:
             try:
                 self.getVCCConfiguration()
-                
+
                 # TODO put the git repo check here eventually
 
                 print("Processing Domain Object Methods")
                 for method in dir(self.client.service):
                     if method in methods:
-                        print(f'\t{method}')
+                        print(f"\t{method}")
                         vcc_method = getattr(self.client.service, method)
-                        
+                        target_path_for_method = os.path.join(self.domain_path, method)
+                        # create directory for the target path
+                        os.makedirs(
+                            os.path.dirname(target_path_for_method), exist_ok=True
+                        )
+
                         try:
                             if method in METHOD_DEFAULT_ARGS.keys():
-                                    method_response = vcc_method(METHOD_DEFAULT_ARGS[method])
+                                method_response = vcc_method(
+                                    METHOD_DEFAULT_ARGS[method]
+                                )
                             else:
                                 method_response = vcc_method()
-                            
-                            if method == 'getIVRScripts':
-                                self.get_config_object_detail(method, 'ivrs', method_response)
 
-                            elif method == 'getCampaigns':
-                                self.domain_objects[method] = zeep.helpers.serialize_object(method_response, dict)
-                                self.write_object_to_target_path(f'{self.domain_path}{method}', self.domain_objects[method])
-                                method_response = vcc_method(campaignType='OUTBOUND')
-                                self.get_config_object_detail(method, 'campaigns_outbound', method_response, 'getOutboundCampaign')
-                                method_response = vcc_method(campaignType='INBOUND')
-                                self.get_config_object_detail(method, 'campaigns_inbound', method_response, 'getInboundCampaign')
-                            
-                            elif method == 'getCampaignProfiles':
-                                self.domain_objects[method] = zeep.helpers.serialize_object(method_response, dict)
-                                self.write_object_to_target_path(f'{self.domain_path}{method}', self.domain_objects[method])
-                                self.get_config_object_detail(method, 'campaign_profile_filters', method_response, 'getCampaignProfileFilter')
+                            if method == "getIVRScripts":
+                                self.get_config_object_detail(
+                                    method, "ivrs", method_response
+                                )
+
+                            elif method == "getCampaigns":
+                                self.domain_objects[
+                                    method
+                                ] = zeep.helpers.serialize_object(method_response, dict)
+                                self.write_object_to_target_path(
+                                    target_path_for_method, self.domain_objects[method]
+                                )
+                                method_response = vcc_method(campaignType="OUTBOUND")
+                                self.get_config_object_detail(
+                                    method,
+                                    "campaigns_outbound",
+                                    method_response,
+                                    "getOutboundCampaign",
+                                )
+                                method_response = vcc_method(campaignType="INBOUND")
+                                self.get_config_object_detail(
+                                    method,
+                                    "campaigns_inbound",
+                                    method_response,
+                                    "getInboundCampaign",
+                                )
+
+                            elif method == "getCampaignProfiles":
+                                self.domain_objects[
+                                    method
+                                ] = zeep.helpers.serialize_object(method_response, dict)
+                                self.write_object_to_target_path(
+                                    target_path_for_method, self.domain_objects[method]
+                                )
+                                self.get_config_object_detail(
+                                    method,
+                                    "campaign_profile_filters",
+                                    method_response,
+                                    "getCampaignProfileFilter",
+                                )
                                 # self.get_config_object_detail(method, 'campaign_profile_dispositions', method_response, 'getCampaignProfileDispositions')
                                 self.demystify_campaign_profile_filters()
 
-                            elif method == 'getSkills':
-                                self.domain_objects[method] = zeep.helpers.serialize_object(method_response, dict)
-                                self.write_object_to_target_path(f'{self.domain_path}{method}', self.domain_objects[method])
-                                self.get_config_object_detail(method, 'skills_info', method_response, 'getSkillsInfo')
+                            elif method == "getSkills":
+                                self.domain_objects[
+                                    method
+                                ] = zeep.helpers.serialize_object(method_response, dict)
+                                self.write_object_to_target_path(
+                                    target_path_for_method, self.domain_objects[method]
+                                )
+                                self.get_config_object_detail(
+                                    method,
+                                    "skills_info",
+                                    method_response,
+                                    "getSkillsInfo",
+                                )
 
                             else:
-                                self.domain_objects[method] = zeep.helpers.serialize_object(method_response, dict)
-                                self.write_object_to_target_path(f'{self.domain_path}{method}', self.domain_objects[method])
+                                self.domain_objects[
+                                    method
+                                ] = zeep.helpers.serialize_object(method_response, dict)
+                                self.write_object_to_target_path(
+                                    target_path_for_method, self.domain_objects[method]
+                                )
 
                         except zeep.exceptions.Fault as e:
+                            print("Error: ")
                             print(e)
 
             except zeep.exceptions.Fault as e:
                 print(e)
         else:
-            print('No active client object available to connect with Five9 VCC')
-    
+            print("No active client object available to connect with Five9 VCC")
+
     def sync_contactFields(self):
         pass
 
     def sync_campaignProfiles(self):
-        for profile in self.domain_objects['getCampaignProfiles']:
-            description = profile['description'] or ''
-            if description.find('--sync') > -1:
+        for profile in self.domain_objects["getCampaignProfiles"]:
+            description = profile["description"] or ""
+            if description.find("--sync") > -1:
                 try:
-                    self.sync_target_domain.client.service.createCampaignProfile(profile)
+                    self.sync_target_domain.client.service.createCampaignProfile(
+                        profile
+                    )
                     print(f'\t\t\tSYNC (create): {profile["name"]}')
                 except:
-                    self.sync_target_domain.client.service.modifyCampaignProfile(profile)
+                    self.sync_target_domain.client.service.modifyCampaignProfile(
+                        profile
+                    )
                     print(f'\t\t\tSYNC (update): {profile["name"]}')
 
                     # Remove filters/grouping from the target domain before adding in conditions and grouping from this domain
                     self.sync_target_domain.client.service.modifyCampaignProfileCrmCriteria(
                         profileName=profile["name"],
-                        grouping={
-                            "expression": None,
-                            "type": "All"
-                        },
-                        removeCriteria=self.sync_target_domain.domain_objects['getCampaignProfiles_campaign_profile_filters'][profile["name"]]["crmCriteria"]
+                        grouping={"expression": None, "type": "All"},
+                        removeCriteria=self.sync_target_domain.domain_objects[
+                            "getCampaignProfiles_campaign_profile_filters"
+                        ][profile["name"]]["crmCriteria"],
                     )
-                    if len(self.sync_target_domain.domain_objects['getCampaignProfiles_campaign_profile_filters'][profile["name"]]["orderByFields"]) > 0:
-                        remove_fields = self.sync_target_domain.domain_objects['getCampaignProfiles_campaign_profile_filters'][profile["name"]]["orderByFields"]
-                        
+                    if (
+                        len(
+                            self.sync_target_domain.domain_objects[
+                                "getCampaignProfiles_campaign_profile_filters"
+                            ][profile["name"]]["orderByFields"]
+                        )
+                        > 0
+                    ):
+                        remove_fields = self.sync_target_domain.domain_objects[
+                            "getCampaignProfiles_campaign_profile_filters"
+                        ][profile["name"]]["orderByFields"]
+
                         self.sync_target_domain.client.service.modifyCampaignProfileFilterOrder(
                             campaignProfile=profile["name"],
-                            removeOrderByField=[field['fieldName'] for field in remove_fields]
+                            removeOrderByField=[
+                                field["fieldName"] for field in remove_fields
+                            ],
                         )
-                    
+
                 self.sync_target_domain.client.service.modifyCampaignProfileCrmCriteria(
                     profileName=profile["name"],
-                    grouping=self.domain_objects['getCampaignProfiles_campaign_profile_filters'][profile["name"]]["grouping"],
-                    addCriteria=self.domain_objects['getCampaignProfiles_campaign_profile_filters'][profile["name"]]["crmCriteria"]
+                    grouping=self.domain_objects[
+                        "getCampaignProfiles_campaign_profile_filters"
+                    ][profile["name"]]["grouping"],
+                    addCriteria=self.domain_objects[
+                        "getCampaignProfiles_campaign_profile_filters"
+                    ][profile["name"]]["crmCriteria"],
                 )
-                if len(self.domain_objects['getCampaignProfiles_campaign_profile_filters'][profile["name"]]["orderByFields"]) > 0:
+                if (
+                    len(
+                        self.domain_objects[
+                            "getCampaignProfiles_campaign_profile_filters"
+                        ][profile["name"]]["orderByFields"]
+                    )
+                    > 0
+                ):
                     self.sync_target_domain.client.service.modifyCampaignProfileFilterOrder(
                         campaignProfile=profile["name"],
-                        addOrderByField=self.domain_objects['getCampaignProfiles_campaign_profile_filters'][profile["name"]]["orderByFields"]
+                        addOrderByField=self.domain_objects[
+                            "getCampaignProfiles_campaign_profile_filters"
+                        ][profile["name"]]["orderByFields"],
                     )
 
     def sync_ivrScripts(self):
@@ -234,18 +336,29 @@ class Five9DomainConfig:
 
     def demystify_campaign_profile_filters(self, reload_domain=False, verbose=False):
         if reload_domain == True:
-            self.get_domain_objects(methods=['getCampaignProfiles'])
-        profile_filters = self.domain_objects["getCampaignProfiles_campaign_profile_filters"]
-        subfolder_path = f'{self.domain_path}/campaign_profile_filters_demystified/'
-        os.makedirs(os.path.dirname(subfolder_path), exist_ok=True)
+            self.get_domain_objects(methods=["getCampaignProfiles"])
+        profile_filters = self.domain_objects[
+            "getCampaignProfiles_campaign_profile_filters"
+        ]
+
+        subfolder_path = os.path.join(
+            self.domain_path, 
+            "campaign_profile_filters_demystified"
+        )
+
+        os.makedirs(subfolder_path, exist_ok=True)
+        print(
+            f"\n\n********** Demystifying campaign profile filters to\n{subfolder_path}"
+        )
         for pf in profile_filters.keys():
             profile_filter = profile_filters[pf]
             if verbose == True:
                 print(f"\n\n********** Demystifying {pf}")
-            if(profile_filter['grouping']['type'] == "Custom") and len(profile_filter["crmCriteria"]) > 0:
+            if (profile_filter["grouping"]["type"] == "Custom") and len(
+                profile_filter["crmCriteria"]
+            ) > 0:
+                target_filename = os.path.join(subfolder_path, pf)
                 demystified = demystify_filter(profile_filter, verbose=verbose)
                 self.write_object_to_target_path(
-                    target_path=f'{subfolder_path}{pf}',
-                    domain_object=demystified,
-                    toJson=False
+                    target_path=target_filename, domain_object=demystified, toJson=False
                 )

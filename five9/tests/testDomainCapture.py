@@ -35,11 +35,14 @@ class TestDomainCapture(unittest.TestCase):
         self.password = ACCOUNTS["default_test_account"]["password"]
         self.account = "default_test_account"
         self.client = Five9Client(account=self.account)
-        self.domain_configuration = Five9DomainConfig(
-            client=self.client, methods=["getCampaignProfiles"]
-        )
 
-    def test_domain_config_initialization(self):
+
+    def test_domain_config_capture(self):
+        self.domain_configuration = Five9DomainConfig(
+            client=self.client, 
+            # methods=["getCampaignProfiles"]
+        )
+        
         self.assertEqual(self.domain_configuration.client, self.client)
 
         # assert that a folder was created matching the domain name in the
@@ -55,6 +58,9 @@ class TestDomainCapture(unittest.TestCase):
                 campaign["type"] == "OUTBOUND"
                 and campaign["mode"] == "ADVANCED"
                 and campaign["profileName"]
+                and self.domain_configuration.domain_objects[
+                        "getCampaignProfiles_campaign_profile_filters"
+                    ][campaign["profileName"]]["grouping"]["type"] == "Custom"
                 and len(
                     self.domain_configuration.domain_objects[
                         "getCampaignProfiles_campaign_profile_filters"
@@ -62,15 +68,13 @@ class TestDomainCapture(unittest.TestCase):
                 )
                 > 0
             ):
-                # get current directory 
-                current_directory = os.getcwd()
                 # build path variable for the demystified campaign profile
                 # and assert that it exists
                 demystified_campaign_profile_path = os.path.join(
                     "domain_config",
                     "domain_snapshots",
                     f"{self.domain_configuration.domain_path}",
-                    "demystified_campaign_profiles",
+                    "campaign_profile_filters_demystified",
                     campaign["profileName"] + ".txt",
                 )
                 print(demystified_campaign_profile_path)
