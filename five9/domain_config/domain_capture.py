@@ -1,9 +1,7 @@
 import json
 import os
 import time
-import shutil
 
-import git
 import zeep
 
 import five9_session
@@ -11,7 +9,7 @@ from .campaign_profile_comprehension import demystify_filter
 
 API_SLEEP_INTERVAL  = .3
 
-REPO_PATH = "domain_config\\domain_snapshots\\"
+REPO_PATH = "domain_snapshots"
 
 METHOD_DEFAULT_ARGS = {
     "getAgentGroups": ".*",
@@ -38,12 +36,17 @@ METHODS = [
     'getUserProfiles',
 ]
 
+METHOD_DEPENDENCIES = {
+    'getCampaignProfiles': ['getCampaigns'],
+}
+
 
 class Five9DomainConfig:
     def __init__(self, client=None, username=None, password=None, account=None, sync_target_domain=None, methods=METHODS):
         self.client = None
         self.domain_objects = {}
-        self.domain_path = f'{REPO_PATH}'
+        # set the domain path to the current workign directory + domain_snapshots
+        self.domain_path = None
         self.repo = None
         self.repo_path = None
         self.vccConfig = None
@@ -56,6 +59,13 @@ class Five9DomainConfig:
             self.client = client
 
         if self.client is not None:
+            # check for methods that have dependencies, add dependencies to methods list
+            for method in methods:
+                if method in METHOD_DEPENDENCIES:
+                    for dependency in METHOD_DEPENDENCIES[method]:
+                        if dependency not in methods:
+                            methods.append(dependency)
+                
             self.get_domain_objects(methods=methods)
     
     def sync_to_target_domain(self, sync_objects=[]):
@@ -64,7 +74,6 @@ class Five9DomainConfig:
 
         self.sync_methods = {
             "campaignProfiles": self.sync_campaignProfiles,
-
         }
 
         if self.sync_target_domain is not None:
@@ -77,23 +86,19 @@ class Five9DomainConfig:
 
     def getVCCConfiguration(self):
         self.vccConfig = self.client.service.getVCCConfiguration()
-        self.domain_path = f'{REPO_PATH}\\{self.vccConfig.domainName}\\'
+        
+        self.domain_path = os.path.join(
+            os.path.dirname(__file__), 
+            "domain_snapshots", 
+            f'{self.vccConfig.domainName}_{time.strftime("%Y%m%d_%H%M%S")}'
+        )
+        print(self.domain_path)
         print(f'\nAcquiring configuration for domain:\n{self.vccConfig.domainName}\n')
-        try:
-            shutil.rmtree(os.path.dirname(f'{self.domain_path}'), )
-        except:
-            pass
+
         os.makedirs(os.path.dirname(f'{self.domain_path}'), exist_ok=True)
     
-    def get_or_create_repo(self):
-        os.makedirs(os.path.dirname(REPO_PATH), exist_ok=True)
-        self.repo_path = os.path.dirname(REPO_PATH)
-        # try:
-        #     self.repo = git.Repo(self.repo_path)
-        # except git.exc.InvalidGitRepositoryError as e:
-        #     print(f'Initializing bare repository in {self.repo_path}')
-        #     git.Repo.init(REPO_PATH, bare=False)
-        #     self.repo = git.Repo(self.repo_path)
+
+    # TODO - Add logic to check if repo exists and if so, pull latest, else create new repo
     
     def write_object_to_target_path(self, target_path, domain_object, sort_keys=True, indent=4, toJson=True, filetype="txt"):
         output_string = ""
@@ -110,7 +115,7 @@ class Five9DomainConfig:
         #     return False
 
     def get_config_object_detail(self, parent_method_name, subfolder_name, method_response=None, vcc_method=None):
-        subfolder_path = f'{self.domain_path}\\{subfolder_name}\\'
+        subfolder_path = f'{self.domain_path}/{subfolder_name}/'
         os.makedirs(os.path.dirname(subfolder_path), exist_ok=True)
         print(f'\n\t{parent_method_name} - {subfolder_name}')
         self.domain_objects[f'{parent_method_name}_{subfolder_name}'] = {}
@@ -124,16 +129,16 @@ class Five9DomainConfig:
                 time.sleep(.3)
                 # print(domain_object)
             self.domain_objects[f'{parent_method_name}_{subfolder_name}'][object_name] = zeep.helpers.serialize_object(domain_object, dict)
-            target_path = f'{subfolder_path}\\{object_name}'
+            target_path = f'{subfolder_path}/{object_name}'
             self.write_object_to_target_path(target_path, self.domain_objects[f'{parent_method_name}_{subfolder_name}'][object_name])
 
     def get_domain_objects(self, methods=METHODS):
         if self.client is not None:
             try:
                 self.getVCCConfiguration()
-                self.get_or_create_repo()
-                # branch = self.repo.create_head(self.vccConfig.domainName)
-                # self.repo.checkout(branch)
+                
+                # TODO put the git repo check here eventually
+
                 print("Processing Domain Object Methods")
                 for method in dir(self.client.service):
                     if method in methods:
@@ -231,7 +236,7 @@ class Five9DomainConfig:
         if reload_domain == True:
             self.get_domain_objects(methods=['getCampaignProfiles'])
         profile_filters = self.domain_objects["getCampaignProfiles_campaign_profile_filters"]
-        subfolder_path = f'{self.domain_path}\\campaign_profile_filters_demystified\\'
+        subfolder_path = f'{self.domain_path}/campaign_profile_filters_demystified/'
         os.makedirs(os.path.dirname(subfolder_path), exist_ok=True)
         for pf in profile_filters.keys():
             profile_filter = profile_filters[pf]
