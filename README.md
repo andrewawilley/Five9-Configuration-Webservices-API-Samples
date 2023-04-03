@@ -2,14 +2,24 @@
 
 The purpose of this repository is to provide individually functional scripts to demonstrate how to use Five9 Configuration Webservices API methods in Python.
 
-### Windows Users
+### Obtain the repository
+
+It is highly recommended that you install [git](https://git-scm.com/download/win) so that you can update to the latest version of this repository as needed.  Once installed, from the command line you can clone this repository with
+
+    git clone https://github.com/andrewawilley/Five9-Configuration-Webservices-API-Samples.git
+
+You can also just download a [zip archive](https://github.com/andrewawilley/Five9-Configuration-Webservices-API-Samples/archive/refs/heads/main.zip) of the repository and extract
+
+from the shell, navigate to the local copy (change to the directory that the repository is located) and then ...
+
+#### Windows Users
     mkdir venvs
     cd venvs
     py.exe -m venv five9
     cd ..
     .\venvs\five9\Scripts\activate
 
-### Mac/Linux Users
+#### Mac/Linux Users
     mkdir venvs
     cd venvs
     python3 -m venv five9
@@ -36,15 +46,15 @@ If you run a script without this accounts object, you'll be prompted to enter us
 # Creating and using a shell session
 After activating the virtual evnironment and starting a python shell, an authenticated client can be obtained using the included five9_session.py
 
-    import five9_session
-    client = five9_session.get_client()
+import five9_session
+client = five9_session.Five9Client()
 
-This will return an authenticated client object that can invoke any of the API endpoints.  For example:
+This creates an authenticated client object that can invoke any of the API endpoints.  For example:
 
     call_variables = client.service.getCallVariables()
 
-The most recent SOAP envelope content can be retrieved with 
+The most recent SOAP envelope content can be viewed with 
 
-    envelopes = client.latest_envelopes(verbose=True)
+    print(client.latest_envelopes)
 
-The verbose option defaults to false, if true the envelopes will output to the shell.
+To print all the 
