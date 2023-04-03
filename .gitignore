@@ -1,3 +1,6 @@
+# ignore .github folder for now
+.github/
+
 # Windows image file caches
 Thumbs.db
 ehthumbs.db

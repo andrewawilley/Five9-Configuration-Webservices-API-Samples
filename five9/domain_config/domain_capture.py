@@ -40,8 +40,6 @@ METHODS = [
 
 
 class Five9DomainConfig:
-
-
     def __init__(self, client=None, username=None, password=None, account=None, sync_target_domain=None, methods=METHODS):
         self.client = None
         self.domain_objects = {}
