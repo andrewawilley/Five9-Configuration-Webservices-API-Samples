@@ -1,7 +1,9 @@
 import json
 import os
+import shutil
 import time
 
+from git import Repo
 import zeep
 
 import five9_session
@@ -49,17 +51,19 @@ class Five9DomainConfig:
         sync_target_domain=None,
         methods=METHODS,
     ):
-        self.client = None
-        self.domain_objects = {}
-        # set the domain path to the current workign directory + domain_snapshots
-        self.domain_path = None
-        self.repo = None
-        self.repo_path = None
-        self.vccConfig = None
-
+        self.client = client
         self.sync_target_domain = sync_target_domain
+        self.methods = methods
+
+        self.domain_objects = {}
+      
+        self.domain_path = None
+        
+        self.vccConfig = None
+        self.repo = None
 
         if client is None:
+            print("\nNo client provided, creating a new client")
             self.client = five9_session.Five9Client(
                 five9username=username, five9password=password, account=account
             )
@@ -74,7 +78,7 @@ class Five9DomainConfig:
                         if dependency not in methods:
                             methods.append(dependency)
 
-            self.get_domain_objects(methods=methods)
+            self.getVCCConfiguration()
 
     def sync_to_target_domain(self, sync_objects=[]):
         """Method to run the domain object sync methods that are implemented.  If no sync_objects are provided, will run all sync methods"""
@@ -92,18 +96,43 @@ class Five9DomainConfig:
                 sync_method()
 
     def getVCCConfiguration(self):
-        self.vccConfig = self.client.service.getVCCConfiguration()
+        """Method to get the VCC Configuration for the domain and create the domain snapshot folder"""
 
+        self.vccConfig = self.client.service.getVCCConfiguration()
         self.domain_path = os.path.join(
             os.path.dirname(__file__),
             "domain_snapshots",
             f"{self.vccConfig.domainName}",
         )
 
-        print(self.domain_path)
-        print(f"\nAcquiring configuration for domain:\n{self.vccConfig.domainName}\n")
+        # delete the contents of the domain snapshot folder if it exists, except for the .git folder
+        if os.path.exists(self.domain_path):
+            print(f"\nDeleting existing snapshot data for {self.vccConfig.domainName}:\n{self.domain_path}\n")
+            
+            # for each file in the root directory, delete it unless the parent directory is .git
+            for name in os.listdir(self.domain_path):
+                if name != ".gitignore" and name != ".git":
+                    # if the file is a directory, delete the directory
+                    if os.path.isdir(os.path.join(self.domain_path, name)):
+                        shutil.rmtree(os.path.join(self.domain_path, name))
+                    else:
+                        # remove the file
+                        os.remove(os.path.join(self.domain_path, name))
+                        
+        else:
+            os.makedirs(self.domain_path, exist_ok=True)
 
-        os.makedirs(os.path.dirname(self.domain_path), exist_ok=True)
+        try:
+            self.repo = Repo(self.domain_path)
+            print(f"Found existing repo at {self.domain_path}")
+        except Exception as e:
+            print(f"Error: {e}")
+            self.repo = Repo.init(self.domain_path)
+            self.repo.git.add(A=True)
+            self.repo.index.commit("Initial Commit")
+            print(f"Created new repo at {self.domain_path}")
+
+        print(f"\nDomain snapshot initialized for:\n{self.vccConfig.domainName}\n")
 
     # TODO - Add logic to check if repo exists and if so, pull latest, else create new repo
 
@@ -136,7 +165,7 @@ class Five9DomainConfig:
         self, parent_method_name, subfolder_name, method_response=None, vcc_method=None
     ):
         subfolder_path = os.path.join(self.domain_path, subfolder_name)
-        print(f"\n******Creating Subfolder: {subfolder_path}")
+        
         os.makedirs(os.path.dirname(subfolder_path), exist_ok=True)
         print(f"\n\t{parent_method_name} - {subfolder_name}")
         self.domain_objects[f"{parent_method_name}_{subfolder_name}"] = {}
@@ -161,15 +190,15 @@ class Five9DomainConfig:
                 ],
             )
 
-    def get_domain_objects(self, methods=METHODS):
+    def get_domain_objects(self, methods=None):
+        if methods is None:
+            methods = self.methods
         if self.client is not None:
             try:
                 self.getVCCConfiguration()
 
-                # TODO put the git repo check here eventually
-
                 print("Processing Domain Object Methods")
-                for method in dir(self.client.service):
+                for method in self.client.service._operations.keys():
                     if method in methods:
                         print(f"\t{method}")
                         vcc_method = getattr(self.client.service, method)
@@ -255,6 +284,13 @@ class Five9DomainConfig:
                         except zeep.exceptions.Fault as e:
                             print("Error: ")
                             print(e)
+
+                # add changes to the git repo and commit
+                # print the repo status and path
+                print(f"Git Status: {self.repo.git.status()}")
+                self.repo.git.add(A=True)
+                self.repo.index.commit(f"Domain Object Sync {time.strftime('%Y-%m-%d %H:%M:%S')}")
+
 
             except zeep.exceptions.Fault as e:
                 print(e)
