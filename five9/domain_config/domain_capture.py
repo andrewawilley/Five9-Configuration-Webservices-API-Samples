@@ -56,14 +56,16 @@ class Five9DomainConfig:
         self.methods = methods
 
         self.domain_objects = {}
-      
+
         self.domain_path = None
-        
+
         self.vccConfig = None
         self.repo = None
 
         if client is None:
-            print("\nNo client provided, creating a new client")
+            print(
+                f"\nNo client provided, creating a new client for {username}{account}"
+            )
             self.client = five9_session.Five9Client(
                 five9username=username, five9password=password, account=account
             )
@@ -107,8 +109,10 @@ class Five9DomainConfig:
 
         # delete the contents of the domain snapshot folder if it exists, except for the .git folder
         if os.path.exists(self.domain_path):
-            print(f"\nDeleting existing snapshot data for {self.vccConfig.domainName}:\n{self.domain_path}\n")
-            
+            print(
+                f"\nDeleting existing snapshot data for {self.vccConfig.domainName}:\n{self.domain_path}\n"
+            )
+
             # for each file in the root directory, delete it unless the parent directory is .git
             for name in os.listdir(self.domain_path):
                 if name != ".gitignore" and name != ".git":
@@ -118,7 +122,7 @@ class Five9DomainConfig:
                     else:
                         # remove the file
                         os.remove(os.path.join(self.domain_path, name))
-                        
+
         else:
             os.makedirs(self.domain_path, exist_ok=True)
 
@@ -128,6 +132,9 @@ class Five9DomainConfig:
         except Exception as e:
             print(f"Error: {e}")
             self.repo = Repo.init(self.domain_path)
+            # set the "longpaths=true" option for the repo (required for Windows 
+            # to support long names of objects and the filenames created)
+            self.repo.git.config("core.longpaths", "true")
             self.repo.git.add(A=True)
             self.repo.index.commit("Initial Commit")
             print(f"Created new repo at {self.domain_path}")
@@ -153,7 +160,8 @@ class Five9DomainConfig:
             )
         else:
             output_string = domain_object
-            print(f"\n\nTRYING TO WRITE TO FILE\n{target_path}.{filetype}\n\n")
+            # print(f"\n\nTRYING TO WRITE TO FILE\n{target_path}.{filetype}\n\n")
+
         outputFile = open(f"{target_path}.{filetype}", "w")
         outputFile.write(output_string)
         outputFile.close()
@@ -165,7 +173,7 @@ class Five9DomainConfig:
         self, parent_method_name, subfolder_name, method_response=None, vcc_method=None
     ):
         subfolder_path = os.path.join(self.domain_path, subfolder_name)
-        
+
         os.makedirs(os.path.dirname(subfolder_path), exist_ok=True)
         print(f"\n\t{parent_method_name} - {subfolder_name}")
         self.domain_objects[f"{parent_method_name}_{subfolder_name}"] = {}
@@ -176,7 +184,7 @@ class Five9DomainConfig:
             if vcc_method is not None:
                 sub_method = getattr(self.client.service, vcc_method)
                 domain_object = sub_method(object_name)
-                time.sleep(0.3)
+                time.sleep(0.2)
                 # print(domain_object)
             self.domain_objects[f"{parent_method_name}_{subfolder_name}"][
                 object_name
@@ -289,8 +297,9 @@ class Five9DomainConfig:
                 # print the repo status and path
                 print(f"Git Status: {self.repo.git.status()}")
                 self.repo.git.add(A=True)
-                self.repo.index.commit(f"Domain Object Sync {time.strftime('%Y-%m-%d %H:%M:%S')}")
-
+                self.repo.index.commit(
+                    f"Domain Object Sync {time.strftime('%Y-%m-%d %H:%M:%S')}"
+                )
 
             except zeep.exceptions.Fault as e:
                 print(e)
@@ -378,8 +387,7 @@ class Five9DomainConfig:
         ]
 
         subfolder_path = os.path.join(
-            self.domain_path, 
-            "campaign_profile_filters_demystified"
+            self.domain_path, "campaign_profile_filters_demystified"
         )
 
         os.makedirs(subfolder_path, exist_ok=True)

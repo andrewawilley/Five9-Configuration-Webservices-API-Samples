@@ -36,3 +36,5 @@ if __name__ == "__main__":
     domain = domain_capture.Five9DomainConfig(
         username=args.username, password=args.password, account=args.account_alias
     )
+
+    domain.get_domain_objects()

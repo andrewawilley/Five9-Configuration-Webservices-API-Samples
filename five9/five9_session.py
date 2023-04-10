@@ -58,6 +58,18 @@ class Five9Client(zeep.Client):
             # pass the error to the caller through the Five9ClientCreationError exception
             raise Five9ClientCreationError(e)
 
+    def __format_envelope(self, envelope):
+        """
+        Formats the SOAP envelope for printing.
+
+        Args:
+            envelope: The SOAP envelope to format.
+
+        Returns:
+            A formatted string containing the SOAP envelope.
+        """
+        return etree.tostring(envelope, encoding="unicode", pretty_print=True)
+
 
     @property
     def latest_envelopes(self):
@@ -83,6 +95,43 @@ class Five9Client(zeep.Client):
             self.history = HistoryPlugin()
 
             return envelopes
+
+    @property
+    def latest_envelope_sent(self):
+        """
+        Returns the latest SOAP envelope that was sent by the client as a string.
+
+        Returns:
+            A string containing the latest SOAP envelope that was sent by the client.
+            If no envelope is available, an empty string is returned.
+        """
+        try:
+            return self.__format_envelope(self.history.last_sent["envelope"])
+        except (AttributeError, IndexError, TypeError):
+            # catch cases where the history object was altered to an invalid type
+            # re-initialize the history object
+            self.history = HistoryPlugin()
+
+            return ""
+
+    @property    
+    def latest_envelope_received(self):
+        """
+        Returns the latest SOAP envelope that was received by the client as a string.
+
+        Returns:
+            A string containing the latest SOAP envelope that was received by the client.
+            If no envelope is available, an empty string is returned.
+        """
+        try:
+            return self.__format_envelope(self.history.last_received["envelope"])
+        except (AttributeError, IndexError, TypeError):
+            # catch cases where the history object was altered to an invalid type
+            # re-initialize the history object
+            self.history = HistoryPlugin()
+
+            return ""
+
 
     # TODO class method to obtain the domain rate limits to update a class property
     # that helps bake in a delay between requests if needed
