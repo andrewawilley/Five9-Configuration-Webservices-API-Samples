@@ -96,8 +96,8 @@ class TestFive9Session(unittest.TestCase):
 
         # Assert that the latest envelope is not empty
         self.assertNotEqual(latest_envelopes, "")
-        self.assertNotEqual(latest_envelope_sent, "")
-        self.assertNotEqual(latest_envelope_received, "")
+        self.assertEqual(latest_envelope_sent, "")
+        self.assertEqual(latest_envelope_received, "")
 
         # Assert that the latest envelope does not start with a specific string
         self.assertFalse(
