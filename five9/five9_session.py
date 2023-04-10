@@ -1,3 +1,5 @@
+import base64
+
 from lxml import etree
 import requests
 import zeep
@@ -132,6 +134,31 @@ class Five9Client(zeep.Client):
 
             return ""
 
+    @property
+    def latest_request_headers(self):
+        """
+        Prints the latest request with headers and body.
+        """
+        last_request = self.history.last_sent
+        request_string = ""
+        if last_request:
+            headers = last_request["http_headers"]
+
+            for key, value in headers.items():
+                request_string += f"{key}: {value}\n"
+
+            # Print Basic Auth header
+            auth = f"{self.transport_session.auth.username}:{self.transport_session.auth.password}"
+            # base64 encode the username and password from the session
+            auth_header_value = base64.b64encode(auth.encode("utf-8")).decode("utf-8")
+
+            if auth_header_value:
+                request_string += f"Authorization: {auth_header_value}"
+            
+            return request_string
+
+        else:
+            return "No request found in history"
 
     # TODO class method to obtain the domain rate limits to update a class property
     # that helps bake in a delay between requests if needed

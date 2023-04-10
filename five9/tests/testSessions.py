@@ -63,20 +63,41 @@ class TestFive9Session(unittest.TestCase):
     def test_client_envelopes(self):
         test_client = five9_session.Five9Client(account=self.account)
         self.assertIsNot(test_client.latest_envelopes, "")
+        self.assertIsNot(test_client.latest_envelope_sent, "")
+        self.assertIsNot(test_client.latest_envelope_received, "")
+        self.assertIsNot(test_client.latest_request_headers, "")
+
         self.assertTrue(
             test_client.latest_envelopes.startswith(
                 '<soap-env:Envelope xmlns:soap-env="http://schemas.xmlsoap.org/soap/envelope/">'
             )
         )
+        self.assertTrue(
+            test_client.latest_envelope_sent.startswith(
+                '<soap-env:Envelope xmlns:soap-env="http://schemas.xmlsoap.org/soap/envelope/">'
+            )
+        )
+        
+        self.assertTrue(
+            test_client.latest_envelope_received.startswith(                
+                '<env:Envelope xmlns:env="http://schemas.xmlsoap.org/soap/envelope/">'
+            )
+        )
 
         test_client.history = "accidentally modified"
         latest_envelopes = test_client.latest_envelopes
+        latest_envelope_sent = test_client.latest_envelope_sent
+        latest_envelope_received = test_client.latest_envelope_received
 
         # Assert that the latest envelope is a string
         self.assertIsInstance(latest_envelopes, str)
+        self.assertIsInstance(latest_envelope_sent, str)
+        self.assertIsInstance(latest_envelope_received, str)
 
         # Assert that the latest envelope is not empty
         self.assertNotEqual(latest_envelopes, "")
+        self.assertNotEqual(latest_envelope_sent, "")
+        self.assertNotEqual(latest_envelope_received, "")
 
         # Assert that the latest envelope does not start with a specific string
         self.assertFalse(
@@ -84,6 +105,8 @@ class TestFive9Session(unittest.TestCase):
                 '<soap-env:Envelope xmlns:soap-env="http://schemas.xmlsoap.org/soap/envelope/">'
             )
         )
+
+
 
     @patch("sys.stdout", new_callable=StringIO)
     def test_client_show_available_service_methods(self, mock_stdout):
