@@ -1,4 +1,5 @@
 # ignore .github folder for now
+client_scripts/
 .github/
 
 # Windows image file caches
