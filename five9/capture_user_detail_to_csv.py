@@ -28,6 +28,7 @@ def capture_user_details(
 
     # Create an empty list to store the agent information
     ap = []
+    
 
     # Loop through each user
     for user in users:

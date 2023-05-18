@@ -132,7 +132,7 @@ class Five9DomainConfig:
         except Exception as e:
             print(f"Error: {e}")
             self.repo = Repo.init(self.domain_path)
-            # set the "longpaths=true" option for the repo (required for Windows 
+            # set the "longpaths=true" option for the repo (required for Windows
             # to support long names of objects and the filenames created)
             self.repo.git.config("core.longpaths", "true")
             self.repo.git.add(A=True)
