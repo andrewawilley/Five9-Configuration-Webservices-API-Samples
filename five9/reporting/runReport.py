@@ -66,7 +66,7 @@ except zeep.exceptions.Fault as e:
 
 # Sample soap envelope payloads for the runReport request and response
 print("\nSOAP envelopes for request and response:")
-zeep_history_print(history)
+print(client.latest_envelopes)
 
 # Check to see if the report has finished running.
 # IMPORTANT: failure to pause for some time between each check to see if the
