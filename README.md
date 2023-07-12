@@ -2,6 +2,11 @@
 
 The purpose of this repository is to provide individually functional scripts to demonstrate how to use Five9 Configuration Webservices API methods in Python.
 
+# Breakfix Note
+On July 11, 2023 a schema validation resource located at ws-i.org was no longer available which caused schema validations for API calls to fail.  This has been temporarily mitigated by using a local copy of the WSDL file which no longer references ws-i.org
+
+This is likely a temporary fix and will be replaced with a more permanent solution in the near future.  Please check back for updates.
+
 ### Obtain the repository
 
 It is highly recommended that you install [git](https://git-scm.com/download/win) so that you can update to the latest version of this repository as needed.  Once installed, from the command line you can clone this repository with

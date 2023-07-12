@@ -82,7 +82,6 @@ except requests.exceptions.HTTPError as e:
 
 # this method needs to be called to initialize the session
 
-
 def set_session_parameters(view_settings=None):
     # page 59 of the Statistics Webservices API Reference Guide
     if view_settings is None:
@@ -95,10 +94,14 @@ def set_session_parameters(view_settings=None):
             "timeZone": "-25200000",
         }
     client.service.setSessionParameters(viewSettings=view_settings)
+    # c = client.service.getColumnNames('AgentState')
+    # print(c)
 
 
 def get_specific_statistics(statistics_request_type, statistics_request_columns):
     set_session_parameters()
+    c = client.service.getColumnNames()
+    print(c)
     return client.service.getStatistics(
         statisticType=statistics_request_type, columnNames=statistics_request_columns
     )
@@ -110,27 +113,29 @@ def get_statistics(statistics_request_type):
 
 
 statistics_request_type = "AgentStatistics"
-statistics_request_type = "AgentState"
+# statistics_request_type = "AgentState"
 # Optionally specify only the columns desired for the statistics updates
 statistics_request_columns = {
     "values": {"data": ["Username", "Full Name", "State", "State Since"]}
 }
 
-# If you only need certain columns returned:
+set_session_parameters()
+
+# # If you only need certain columns returned:
 # specific_statistics = get_specific_statistics(
 #     statistics_request_type,
 #     statistics_request_columns)
 
 
-statistics = get_statistics(statistics_request_type)
+# statistics = get_statistics(statistics_request_type)
 
-statistics_timestamp = statistics.timestamp
+# statistics_timestamp = statistics.timestamp
 
-statistics_update = client.service.getStatisticsUpdate(
-    statisticType=statistics_request_type,
-    previousTimestamp=statistics_timestamp,
-    longPollingTimeout=5000,
-)
+# statistics_update = client.service.getStatisticsUpdate(
+#     statisticType=statistics_request_type,
+#     previousTimestamp=statistics_timestamp,
+#     longPollingTimeout=5000,
+# )
 
 # if putting statistics_update in a loop, use statistics_update.lastTimestamp
 # in subsequent update requests.
