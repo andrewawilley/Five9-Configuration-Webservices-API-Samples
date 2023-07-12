@@ -1,7 +1,7 @@
 import base64
 
 from lxml import etree
-import os
+# import os
 import requests
 import zeep
 from zeep.plugins import HistoryPlugin
@@ -26,6 +26,9 @@ class Five9Client(zeep.Client):
 
         self.history = HistoryPlugin()
 
+        # url and user settings consolidated here for convenience to use later
+        api_definition_base = "https://{api_hostname}/wsadmin/{api_version}/?wsdl&user={five9username}"
+
         if five9username == None and five9password == None:
             # Target the desired account using the alias in private.credentials
             api_account_alias = account or "default_account"
@@ -38,16 +41,26 @@ class Five9Client(zeep.Client):
         self.transport_session = requests.Session()
         self.transport_session.auth = requests.auth.HTTPBasicAuth(five9username, five9password)
 
-        # Get the directory of the current file and construct the WSDL file path
-        current_dir = os.path.dirname(os.path.realpath(__file__))
-        wsdl_file_path = os.path.join(current_dir, 'static_resources', 'config_webservices_v13.wsdl')
+        self.api_definition = api_definition_base.format(
+            api_hostname=api_hostname, api_version=api_version, five9username=five9username
+        )
+        print(self.api_definition)
+
+        # BREAKFIX - Get the directory of the current file and construct the WSDL file path
+        # current_dir = os.path.dirname(os.path.realpath(__file__))
+        # wsdl_file_path = os.path.join(current_dir, 'static_resources', 'config_webservices_v13.wsdl')
 
         try:
             super().__init__(
-                wsdl_file_path,
+                self.api_definition,
                 transport=zeep.Transport(session=self.transport_session),
                 plugins=[self.history],
             )
+            # super().__init__(
+            #     wsdl_file_path,
+            #     transport=zeep.Transport(session=self.transport_session),
+            #     plugins=[self.history],
+            # )
             self.call_counters = self.service.getCallCountersState()
             print(f"Client ready for {five9username}")
 
