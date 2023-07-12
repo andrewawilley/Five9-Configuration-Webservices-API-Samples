@@ -1,6 +1,7 @@
 import base64
 
 from lxml import etree
+import os
 import requests
 import zeep
 from zeep.plugins import HistoryPlugin
@@ -25,10 +26,6 @@ class Five9Client(zeep.Client):
 
         self.history = HistoryPlugin()
 
-        # url and user settings consolidated here for convenience to use later
-        api_definition_base = "https://{api_hostname}/wsadmin/{api_version}/?wsdl&user={five9username}"
-        
-
         if five9username == None and five9password == None:
             # Target the desired account using the alias in private.credentials
             api_account_alias = account or "default_account"
@@ -41,14 +38,13 @@ class Five9Client(zeep.Client):
         self.transport_session = requests.Session()
         self.transport_session.auth = requests.auth.HTTPBasicAuth(five9username, five9password)
 
-        self.api_definition = api_definition_base.format(
-            api_hostname=api_hostname, api_version=api_version, five9username=five9username
-        )
-        # print(api_definition)
+        # Get the directory of the current file and construct the WSDL file path
+        current_dir = os.path.dirname(os.path.realpath(__file__))
+        wsdl_file_path = os.path.join(current_dir, 'static_resources', 'config_webservices_v13.wsdl')
 
         try:
             super().__init__(
-                self.api_definition,
+                wsdl_file_path,
                 transport=zeep.Transport(session=self.transport_session),
                 plugins=[self.history],
             )
@@ -59,6 +55,7 @@ class Five9Client(zeep.Client):
         except (requests.exceptions.HTTPError, requests.exceptions.ConnectionError, zeep.exceptions.Fault) as e:
             # pass the error to the caller through the Five9ClientCreationError exception
             raise Five9ClientCreationError(e)
+
 
     def __format_envelope(self, envelope):
         """
