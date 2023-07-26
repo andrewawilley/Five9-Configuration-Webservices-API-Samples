@@ -62,6 +62,7 @@ class Five9Client(zeep.Client):
             #     plugins=[self.history],
             # )
             self.call_counters = self.service.getCallCountersState()
+            
             print(f"Client ready for {five9username}")
 
         # handle generic http errors
@@ -143,6 +144,49 @@ class Five9Client(zeep.Client):
             self.history = HistoryPlugin()
 
             return ""
+
+    @property
+    def current_api_useage_formatted(self):
+        # Fetching the current state of call counters
+        current_call_counters = self.service.getCallCountersState()
+        
+        # Initialize an empty dictionary to store the results
+        result = {}
+
+        # Iterate over each object in the call counter state
+        for obj in current_call_counters:
+            timeout = obj['timeout']
+
+            # Iterate over each state in the callCounterStates of the current object
+            for state in obj['callCounterStates']:
+                operation_type = state['operationType']
+
+                # If the operation type has not been added to the result dictionary, add it with an empty list as its value
+                if operation_type not in result:
+                    result[operation_type] = []
+
+                # Format the usage as a tuple where the first element is the timeout and the second element is a formatted string
+                usage = (timeout, f"{timeout: >5}: {state['value']: >7}/{state['limit']}")
+                
+                # Add the formatted usage to the list of usages for the current operation type
+                result[operation_type].append(usage)
+            
+        # Sort the dictionary by keys (operation types)
+        result = dict(sorted(result.items()))
+
+        # Initialize a list to store the formatted output
+        formatted_output = []
+
+        # Iterate over each operation type and its associated usages
+        for operation_type, usages in result.items():
+            usages.sort()  # Sorting the list of usages
+            # Format the output string for the current operation type and add it to the list of formatted outputs
+            formatted_output.append("{}:\n{}".format(operation_type, "\n".join(["\t"+u[1] for u in usages])))
+
+        # Join the list of formatted outputs into a single string with two newlines between each section
+        return "\n\n".join(formatted_output)
+
+
 
     @property
     def latest_request_headers(self):
