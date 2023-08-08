@@ -42,8 +42,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     client = five9_session.Five9Client(
-        username=args.username,
-        password=args.password,
+        five9username=args.username,
+        five9password=args.password,
         account=args.account_alias
     )
     
