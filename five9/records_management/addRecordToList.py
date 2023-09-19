@@ -14,7 +14,7 @@ result_identifier = client.service.addRecordToList(
             # Note that the key fields combine to create unique-together constraints that are used 
             # to create or update the underlying contact records.  
             {'columnNumber': 1, 'fieldName': 'number1', 'key': 'true'},
-            {'columnNumber': 2, 'fieldName': 'uuid', 'key': 'false'},
+            {'columnNumber': 2, 'fieldName': 'uuid', 'key': 'true'},
             {'columnNumber': 3, 'fieldName': 'email', 'key': 'false'},
         ],
         "callNowMode": "true", # set to true to add to the ASAP queue
@@ -27,9 +27,9 @@ result_identifier = client.service.addRecordToList(
         "listAddMode": "ADD_FIRST", # if multiple contactDB records are matched, determine if multiple list entries should be added.          
     },
     record=[
-        "9133259337",'abcd1234', 'anrew@livingston.com'
-    ],    
+        {'fields': ["9133259337",'abcd123456789', 'anrew@livingston.com'] }
+    ]
 )
 
 # uncomment to see the latest envelopes
-# print(client.latest_envelopes)
+print(client.latest_envelopes)
