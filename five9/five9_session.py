@@ -33,9 +33,12 @@ class Five9Client(zeep.Client):
             # Target the desired account using the alias in private.credentials
             api_account_alias = account or "default_account"
             api_account = ACCOUNTS.get(api_account_alias, {})
-
-            five9username = api_account.get("username", None)
-            five9password = api_account.get("password", None)
+            if api_account == {} or api_account.get("username" or None) == "apiUserUsername":
+                five9username = input("Five9 Username: ")
+                five9password = input("Five9 Password: ")
+            else:
+                five9username = api_account.get("username", None)
+                five9password = api_account.get("password", None)
 
         # prepare the session with BasicAuth headers
         self.transport_session = requests.Session()
