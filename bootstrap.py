@@ -18,6 +18,7 @@ ACCOUNTS = {
 }
 '''),
     ("five9/private/__init__.py", ""),
+    ("five9/private/users_to_update.csv", "")
 ]
 
 for new_file in files_to_create:
