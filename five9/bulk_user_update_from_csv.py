@@ -72,8 +72,8 @@ def update_user_details(
                 # update the user object in Five9
                 users_to_update.append(vcc_user)
 
-    print(f"   Total domain users: {len(vcc_users)}")
-    print(f"Total users to update: {len(users_to_update)}")
+    print(f"          Total domain users: {len(vcc_users)}")
+    print(f"Total users with differences: {len(users_to_update)}")
 
     update_errors = []
 
@@ -83,7 +83,19 @@ def update_user_details(
             try:
                 client.service.modifyUser(user)
             except Exception as e:
-                update_errors.append(user.userName)
+                update_errors.append((user, e))
+
+    if len(update_errors) > 0:
+        print(f"\nErrors updating users:")
+        for user, error in update_errors:
+            print(f"{user.userName}: {error}")
+
+        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        error_filename = f"private/update_user_errors_{timestamp}.txt"
+        print(f"\nWriting errors to {error_filename}\n")
+        with open(error_filename, "w") as file:
+            for user, error in update_errors:
+                file.write(f"{user.userName}: {error}\n")
 
 
 if __name__ == "__main__":
