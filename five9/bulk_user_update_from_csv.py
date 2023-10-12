@@ -3,14 +3,44 @@ import csv
 from datetime import datetime
 import os
 
+from dateutil.parser import parse
 import tqdm
 
 import five9_session
 
+def datatype_conversion(datatype, value):
+    # if bool, handle if the value is a variation of True or False
+    try:
+        if datatype in [str, type(None)]:
+            return value
+        
+        if datatype == bool:
+            if value.lower() in ["true", "t", "yes", "y", "1"] :
+                return True
+            elif value.lower() in ["false", "f", "no", "n", "0"]:
+                return False
+            else:
+                raise Exception(f"Unable to convert {value} to {datatype}")
+            
+        # if int, return the int value of the string
+        if datatype == int:
+            return int(value)
+        
+        # if float, return the float value of the string
+        if datatype == float:
+            return float(value)
+        
+        # if datetime, return the datetime value of the string
+        if datatype == datetime:
+            return parse(value)
+
+    except Exception as e:
+        raise Exception(f"Unable to convert {value} to {datatype}")
 
 def update_user_details(
     client: five9_session.Five9Client,
     target_filename: str = "users.csv",
+    cautious_mode: bool = True,
 ):
     """Retrieve user general info from a csv file and update the Five9 user object in VCC
 
@@ -66,6 +96,11 @@ def update_user_details(
             # if the values are different, update the user object with the value from the target_user
             for target_field_name, target_field_value in target_user.items():
                 if target_field_value != vcc_user[target_field_name]:
+                    # get the datatype of the vcc_user[target_field_name]
+                    datatype = type(vcc_user[target_field_name])
+                    # convert the target_field_value to the datatype of the vcc_user[target_field_name]
+                    target_field_value = datatype_conversion(datatype, target_field_value)
+                    
                     vcc_user[target_field_name] = target_field_value
                     user_needs_update = True
             if user_needs_update:
@@ -128,11 +163,16 @@ if __name__ == "__main__":
     parser.add_argument(
         "-fn", "--filename", help="Target CSV file with path", required=False
     )
+    parser.add_argument(
+        "-c", "--cautiousmode", help="Cautious mode pauses to confirm along the way.  Defaults to True", required=False
+    )
     args = vars(parser.parse_args())
 
     five9_username = args["username"] or None
     five9_password = args["password"] or None
     five9_account = args["account"] or None
+
+    cautious_mode = args["cautiousmode"] or True
 
     # Set the target filename to private/users_{yyyy-mm-dd}.csv
     target_filename = args["filename"] or f"private/users_to_update.csv"
