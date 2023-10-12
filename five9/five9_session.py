@@ -256,8 +256,8 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        "-db",
-        "--domainbootstrap",
+        "-go",
+        "--getobjects",
         action="store_true",
         help="preload common domain objects",
     )
@@ -266,12 +266,15 @@ if __name__ == "__main__":
     username = args["username"] or None
     password = args["password"] or None
     account = args["account"] or None
-    domainbootstrap = args["domainbootstrap"] or None
+    get_objects = args["getobjects"] or None
     client = Five9Client(five9username=username, five9password=password, account=account)
 
-    if domainbootstrap:
+    if get_objects:
         users = client.service.getUsersInfo()
+        print("\nUsers loaded as 'users'")
         campaigns = client.service.getCampaigns()
+        print("Campaigns loaded as 'campaigns'")
         skills = client.service.getSkills()
+        print("Skills loaded as 'skills'\n")
 
     code.interact(local=locals())
