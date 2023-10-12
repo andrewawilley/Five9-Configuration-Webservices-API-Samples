@@ -15,7 +15,7 @@ By choosing to use this code, you acknowledge and agree to the following:
 
 For a fully supported, robust, and tailor-made solution, we highly recommend consulting with Five9's professional services team. Utilizing their expertise ensures a reliable and efficient setup that meets your specific needs, and comes with the added benefit of official support.
 
-### Obtain the repository
+# Obtaining the repository
 
 It is highly recommended that you install [git](https://git-scm.com/download/win) so that you can update to the latest version of this repository as needed.  Once installed, from the command line you can clone this repository with
 
@@ -57,12 +57,39 @@ The credentials object in private.credentials looks like this:
 If you run a script without this accounts object, you'll be prompted to enter username and password in the console. 
 
 # Creating and using a shell session
-After activating the virtual evnironment and starting a python shell, an authenticated client can be obtained using the included five9_session.py
+After activating the virtual evnironment, launch an interactive shell session with the included five9_session.py
 
-import five9_session
-client = five9_session.Five9Client()
+When executed on its own, it will launch an interactive shell that can be used to test API calls.  For example:
 
-This creates an authenticated client object that can invoke any of the API endpoints.  For example:
+    python five9_session.py
+    https://api.five9.com/wsadmin/v12/?wsdl&user=clutch_vcc@aw_tam
+    Client ready for clutch_vcc@aw_tam
+    Python 3.11.3 (tags/v3.11.3:f3909b8, Apr  4 2023, 23:49:59) [MSC v.1934 64 bit (AMD64)] on win32
+    Type "help", "copyright", "credits" or "license" for more information.
+    (InteractiveConsole)
+    >>> users = client.service.getUsersGeneralInfo()
+    >>> print(users)
+
+By default the session will use the default_account credentials from the private.credentials file.  If you want to use a different account, you can specify it as an argument to the script such as:
+
+    python five9_session.py --account my_other_account
+
+You can also provide the username and password as arguments to the script
+
+    python five9_session.py --username apiUserName --password superSecretPassword
+
+Adding the "-go" flag will also obtain the domain 'users', 'campaigns', and 'skills' as variables in the shell
+
+    python five9_session.py -go
+
+The Five9Client in the five9_session script can be used in other scripts as well.  For example, in another script you can import the Five9Client class and create a client object like this:
+
+    from five9_session import Five9Client
+    client = five9_session.Five9Client()
+
+## Using the client object
+
+An authenticated client object can invoke any of the API endpoints.  For example:
 
     call_variables = client.service.getCallVariables()
 
