@@ -150,7 +150,26 @@ if __name__ == "__main__":
         It will only update users who have field values that differ from the values in Five9.\n
         If no filename is provided, it will default to private/users_to_update.csv\n
         The CSV file must have a header row with fields that match the user object properties in Five9 as documented in the Five9 API documentation.
-        
+        active
+        canChangePassword
+        EMail
+        extension
+        federationId
+        firstName
+        fullName
+        id
+        IEXScheduled
+        lastName
+        locale
+        mediaTypeConfig
+        mustChangePassword
+        password
+        phoneNumber
+        startDate
+        unifiedCommunicationId
+        userName
+        userProfileName
+
         """
     )
     parser.add_argument(

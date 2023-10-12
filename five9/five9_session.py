@@ -1,5 +1,7 @@
 import base64
+import code
 
+import argparse
 from lxml import etree
 # import os
 import requests
@@ -230,4 +232,46 @@ class Five9Client(zeep.Client):
         methods = sorted(self.service._operations.keys())
         for method in methods:
             print(f"\t{method}")
-    
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-u",
+        "--username",
+        help="Five9 Username for authentication, password argument required if provided",
+        required=False,
+    )
+    parser.add_argument(
+        "-p",
+        "--password",
+        help="Five9 Password for authentication, username argument required if provided",
+        required=False,
+    )
+    parser.add_argument(
+        "-a",
+        "--account",
+        help="Alias for credential stored in private/credentials",
+        required=False,
+    )
+
+    parser.add_argument(
+        "-db",
+        "--domainbootstrap",
+        action="store_true",
+        help="preload common domain objects",
+    )
+
+    args = vars(parser.parse_args())
+    username = args["username"] or None
+    password = args["password"] or None
+    account = args["account"] or None
+    domainbootstrap = args["domainbootstrap"] or None
+    client = Five9Client(five9username=username, five9password=password, account=account)
+
+    if domainbootstrap:
+        users = client.service.getUsersInfo()
+        campaigns = client.service.getCampaigns()
+        skills = client.service.getSkills()
+
+    code.interact(local=locals())
