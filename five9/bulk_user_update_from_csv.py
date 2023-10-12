@@ -8,28 +8,28 @@ import tqdm
 
 import five9_session
 
+
 def datatype_conversion(datatype, value):
-    # if bool, handle if the value is a variation of True or False
     try:
         if datatype in [str, type(None)]:
             return value
-        
+
         if datatype == bool:
-            if value.lower() in ["true", "t", "yes", "y", "1"] :
+            if value.lower() in ["true", "t", "yes", "y", "1"]:
                 return True
             elif value.lower() in ["false", "f", "no", "n", "0"]:
                 return False
             else:
                 raise Exception(f"Unable to convert {value} to {datatype}")
-            
+
         # if int, return the int value of the string
         if datatype == int:
             return int(value)
-        
+
         # if float, return the float value of the string
         if datatype == float:
             return float(value)
-        
+
         # if datetime, return the datetime value of the string
         if datatype == datetime:
             return parse(value)
@@ -37,10 +37,11 @@ def datatype_conversion(datatype, value):
     except Exception as e:
         raise Exception(f"Unable to convert {value} to {datatype}")
 
+
 def update_user_details(
     client: five9_session.Five9Client,
     target_filename: str = "users.csv",
-    cautious_mode: bool = True,
+    simulation_mode: bool = True,
 ):
     """Retrieve user general info from a csv file and update the Five9 user object in VCC
 
@@ -60,6 +61,8 @@ def update_user_details(
 
     users_from_csv = {}
     users_to_update = []
+
+    update_errors = []
 
     # open the csv file
     with open(target_filename, "r") as file:
@@ -87,38 +90,46 @@ def update_user_details(
         # each row is a dictionary with the header as the key and the value as the value
         for row in reader:
             users_from_csv[row["userName"]] = row
-
-    for vcc_user in vcc_users:
-        target_user = users_from_csv.get(vcc_user.userName, None)
-        user_needs_update = False
-        if target_user is not None:
-            # for each property in the target_user, compare to the values in the user object
-            # if the values are different, update the user object with the value from the target_user
-            for target_field_name, target_field_value in target_user.items():
-                if target_field_value != vcc_user[target_field_name]:
+    
+    print("\nChecking for fields to update")
+    for vcc_user in vcc_users:        
+        try:
+            target_user = users_from_csv.get(vcc_user.userName, None)
+            user_needs_update = False
+            if target_user is not None:
+                # for each property in the target_user, compare to the values in the user object
+                # if the values are different, update the user object with the value from the target_user
+                for target_field_name, target_field_value in target_user.items():
                     # get the datatype of the vcc_user[target_field_name]
                     datatype = type(vcc_user[target_field_name])
                     # convert the target_field_value to the datatype of the vcc_user[target_field_name]
                     target_field_value = datatype_conversion(datatype, target_field_value)
-                    
-                    vcc_user[target_field_name] = target_field_value
-                    user_needs_update = True
-            if user_needs_update:
-                # update the user object in Five9
-                users_to_update.append(vcc_user)
 
-    print(f"          Total domain users: {len(vcc_users)}")
-    print(f"Total users with differences: {len(users_to_update)}")
+                    if target_field_value != vcc_user[target_field_name]:
+                        if simulation_mode == True:
+                            print(f'\t{vcc_user.userName}: {target_field_name} = "{target_field_value}"')
+                        vcc_user[target_field_name] = target_field_value
+                        user_needs_update = True
 
-    update_errors = []
+                if user_needs_update:
+                    # update the user object in Five9
+                    users_to_update.append(vcc_user)
+
+        except Exception as e:
+            update_errors.append((vcc_user, e))
+
+    print(f"\n               Total domain users: {len(vcc_users)}")
+    print(f"Total users with fields to update: {len(users_to_update)}\n")
 
     # update the users in Five9
     if len(users_to_update) > 0:
         for user in tqdm.tqdm(users_to_update):
             try:
-                client.service.modifyUser(user)
+                if simulation_mode == False:
+                    client.service.modifyUser(user)
             except Exception as e:
                 update_errors.append((user, e))
+    print('\n')
 
     if len(update_errors) > 0:
         print(f"\nErrors updating users:")
@@ -164,7 +175,10 @@ if __name__ == "__main__":
         "-fn", "--filename", help="Target CSV file with path", required=False
     )
     parser.add_argument(
-        "-c", "--cautiousmode", help="Cautious mode pauses to confirm along the way.  Defaults to True", required=False
+        "-s",
+        "--simulationmode",
+        help="Simulation mode goes through the motions but doesn't update VCC.  Defaults to False",
+        required=False,
     )
     args = vars(parser.parse_args())
 
@@ -172,7 +186,10 @@ if __name__ == "__main__":
     five9_password = args["password"] or None
     five9_account = args["account"] or None
 
-    cautious_mode = args["cautiousmode"] or True
+    simulation_mode = datatype_conversion(bool, args["simulationmode"] or "false")
+
+    if simulation_mode == True:
+        print(f"\nSIMULATION MODE\n")
 
     # Set the target filename to private/users_{yyyy-mm-dd}.csv
     target_filename = args["filename"] or f"private/users_to_update.csv"
@@ -187,4 +204,5 @@ if __name__ == "__main__":
     update_user_details(
         client,
         target_filename=target_filename,
+        simulation_mode=simulation_mode
     )
