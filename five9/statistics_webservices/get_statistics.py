@@ -9,7 +9,6 @@ from zeep.plugins import HistoryPlugin
 
 try:
     import sys
-
     sys.path.append("..")
     from private.credentials import ACCOUNTS
 except:
@@ -74,6 +73,7 @@ try:
             history,
         ],
     )
+    print(f"Client created successfully for {five9username}")
 except requests.exceptions.HTTPError as e:
     client = None
     print(e)
@@ -121,12 +121,12 @@ statistics_request_columns = {
 
 set_session_parameters()
 
-# # If you only need certain columns returned:
-# specific_statistics = get_specific_statistics(
-#     statistics_request_type,
-#     statistics_request_columns)
+# If you only need certain columns returned:
+specific_statistics = get_specific_statistics(
+    statistics_request_type,
+    statistics_request_columns)
 
-
+print(specific_statistics)
 # statistics = get_statistics(statistics_request_type)
 
 # statistics_timestamp = statistics.timestamp

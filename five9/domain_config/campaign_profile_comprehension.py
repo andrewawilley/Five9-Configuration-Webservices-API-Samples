@@ -2,6 +2,17 @@ import re
 
 
 def prettify(ugly="", open_set="{[(<", close_set="}])>"):
+    """
+    Formats a string with indentation and newlines based on specified delimiters.
+
+    Args:
+        ugly (str): The string to be formatted.
+        open_set (str): A string containing all opening delimiters to be used for indentation.
+        close_set (str): A string containing all closing delimiters to be used for de-indentation.
+
+    Returns:
+        str: The formatted string with indentation and newlines.
+    """
     # Add a space to the end of the string to ensure the last character is processed
     ugly += " "
 
@@ -48,8 +59,14 @@ def prettify(ugly="", open_set="{[(<", close_set="}])>"):
 
 def demystify_filter(profile_filter, verbose=False):
     """
-    profile_filter = profile filter information object with a ["grouping"]["expression"] attribute
-    verbose=False by default, set True to spool output to console
+    Takes a profile filter information object with a ["grouping"]["expression"] attribute and returns a demystified expression string.
+
+    Args:
+        profile_filter (dict): A dictionary containing the profile filter information.
+        verbose (bool, optional): Whether to spool output to console. Defaults to False.
+
+    Returns:
+        str: The demystified expression string.
     """
     # Compile a regular expression to match numbers
     numbers = re.compile(r"(\d+)")
@@ -119,6 +136,15 @@ def remystify_filter_in_place(nice_filter):
 
 
 def remystify_filter(nice_filter):
+    """
+    Converts a "nice filter" string into a format that can be used by the Five9 Configuration Webservices API.
+
+    Args:
+        nice_filter (str): A "nice filter" string that contains filter conditions in a human-readable format.
+
+    Returns:
+        dict: A dictionary that contains the converted filter criteria, grouping expression, and order by fields.
+    """
     # Remove all bracketed numbers from the nice filter string
     nice_filter = re.sub(r"(\[([0-9]*)\])", "", nice_filter)
 

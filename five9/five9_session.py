@@ -276,5 +276,5 @@ if __name__ == "__main__":
         print("Campaigns loaded as 'campaigns'")
         skills = client.service.getSkills()
         print("Skills loaded as 'skills'\n")
-
+    print()
     code.interact(local=locals())

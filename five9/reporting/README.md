@@ -7,3 +7,17 @@ Ensure that you the report structure that you want defined there.  In the API re
   3. **getReporResult** and **getReportResultCsv** - these methods will return the contents of the report.  I recommend using the getReportResultCsv as it has a higher row capacity. 
 
 See the runReport.py sample script for an example of how to run a report and retrieve the results.
+
+
+## IMPORTANT NOTE
+
+All datetime data retrieved from the Five9 Reporting API will be fixed to the timezone of the Datacenter Region.  
+
+| Datacenter Environment | Timezone |
+-------------|------------
+| US | Pacific |
+| MTL | GMT |
+| FRK | GMT |
+| NLD | GMT |
+| LDN | BST |
+-------------

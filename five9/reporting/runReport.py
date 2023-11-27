@@ -91,7 +91,7 @@ print(reportResultCsv)
 # This is more convenient if you don't want to parse the csv data
 # reportResult = client.service.getReportResult(report_run_id)
 
-row_count_in_result = len(reportResult.records)
+row_count_in_result = len(reportResultCsv.records)
 print(f"Row count: {row_count_in_result}\n")
 
 # print(reportResult)
