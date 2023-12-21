@@ -5,6 +5,7 @@ import zeep
 from tqdm import tqdm
 import five9_session
 
+
 def manage_user_skills(client, users_to_update, skills_to_add, skills_to_remove):
     """
     Manages skills for specified users in the Five9 domain.
@@ -50,7 +51,9 @@ def manage_user_skills(client, users_to_update, skills_to_add, skills_to_remove)
     error_count = 0
     updated_count = 0
 
-    with tqdm(total=len(users_to_update), desc="Updating user skills", mininterval=1) as pbar:
+    with tqdm(
+        total=len(users_to_update), desc="Updating user skills", mininterval=1
+    ) as pbar:
         for user in users_to_update:
             try:
                 for skill in skills_add_objs:

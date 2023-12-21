@@ -4,11 +4,12 @@ import zeep
 from tqdm import tqdm
 import five9_session
 
+
 def update_user_federation_ids(csv_path, client=None):
     """
     Updates federation IDs of users in the Five9 domain based on a provided CSV file.
 
-    This function reads user data from a CSV file, then updates the federation IDs 
+    This function reads user data from a CSV file, then updates the federation IDs
     of corresponding users in the Five9 domain. It assumes each row in the CSV file
     contains 'userName' and 'federationId' columns.
 
@@ -64,7 +65,9 @@ def update_user_federation_ids(csv_path, client=None):
     with tqdm(total=total_users, desc="Updating users", mininterval=1) as pbar:
         for user in users_to_update:
             try:
-                user_federationId = user_federation_Ids.get(user["generalInfo"]["userName"], "skip")
+                user_federationId = user_federation_Ids.get(
+                    user["generalInfo"]["userName"], "skip"
+                )
                 if user_federationId != "skip":
                     user.generalInfo.federationId = user_federationId
                     modified_user = client.service.modifyUser(user.generalInfo)
@@ -74,6 +77,8 @@ def update_user_federation_ids(csv_path, client=None):
                 error_users.append(user)
             finally:
                 pbar.update(1)
-                pbar.set_postfix({"Updated": len(updated_users), "Errors": len(error_users)})
+                pbar.set_postfix(
+                    {"Updated": len(updated_users), "Errors": len(error_users)}
+                )
 
     return updated_users, error_users, missing_users

@@ -2,6 +2,7 @@ import five9_session
 from util import get_random_password
 from tqdm import tqdm
 
+
 def bulk_create_users(client, user_data, template_agent_username):
     """
     Bulk creates user accounts in the Five9 domain based on provided user data and a template agent.
