@@ -3,6 +3,7 @@ import code
 
 import argparse
 from lxml import etree
+
 # import os
 import requests
 import zeep
@@ -29,13 +30,18 @@ class Five9Client(zeep.Client):
         self.history = HistoryPlugin()
 
         # url and user settings consolidated here for convenience to use later
-        api_definition_base = "https://{api_hostname}/wsadmin/{api_version}/?wsdl&user={five9username}"
+        api_definition_base = (
+            "https://{api_hostname}/wsadmin/{api_version}/?wsdl&user={five9username}"
+        )
 
         if five9username == None and five9password == None:
             # Target the desired account using the alias in private.credentials
             api_account_alias = account or "default_account"
             api_account = ACCOUNTS.get(api_account_alias, {})
-            if api_account == {} or api_account.get("username" or None) == "apiUserUsername":
+            if (
+                api_account == {}
+                or api_account.get("username" or None) == "apiUserUsername"
+            ):
                 five9username = input("Five9 Username: ")
                 five9password = input("Five9 Password: ")
             else:
@@ -44,10 +50,14 @@ class Five9Client(zeep.Client):
 
         # prepare the session with BasicAuth headers
         self.transport_session = requests.Session()
-        self.transport_session.auth = requests.auth.HTTPBasicAuth(five9username, five9password)
+        self.transport_session.auth = requests.auth.HTTPBasicAuth(
+            five9username, five9password
+        )
 
         self.api_definition = api_definition_base.format(
-            api_hostname=api_hostname, api_version=api_version, five9username=five9username
+            api_hostname=api_hostname,
+            api_version=api_version,
+            five9username=five9username,
         )
         print(self.api_definition)
 
@@ -67,14 +77,17 @@ class Five9Client(zeep.Client):
             #     plugins=[self.history],
             # )
             self.call_counters = self.service.getCallCountersState()
-            
+
             print(f"Client ready for {five9username}")
 
         # handle generic http errors
-        except (requests.exceptions.HTTPError, requests.exceptions.ConnectionError, zeep.exceptions.Fault) as e:
+        except (
+            requests.exceptions.HTTPError,
+            requests.exceptions.ConnectionError,
+            zeep.exceptions.Fault,
+        ) as e:
             # pass the error to the caller through the Five9ClientCreationError exception
             raise Five9ClientCreationError(e)
-
 
     def __format_envelope(self, envelope):
         """
@@ -87,7 +100,6 @@ class Five9Client(zeep.Client):
             A formatted string containing the SOAP envelope.
         """
         return etree.tostring(envelope, encoding="unicode", pretty_print=True)
-
 
     @property
     def latest_envelopes(self):
@@ -109,7 +121,9 @@ class Five9Client(zeep.Client):
         except (AttributeError, IndexError, TypeError):
             # catch cases where the history object was altered to an invalid type
             # re-initialize the history object
-            envelopes = "History object not found.  Re-initializing the history object.\n\n"
+            envelopes = (
+                "History object not found.  Re-initializing the history object.\n\n"
+            )
             self.history = HistoryPlugin()
 
             return envelopes
@@ -132,7 +146,7 @@ class Five9Client(zeep.Client):
 
             return ""
 
-    @property    
+    @property
     def latest_envelope_received(self):
         """
         Returns the latest SOAP envelope that was received by the client as a string.
@@ -154,28 +168,31 @@ class Five9Client(zeep.Client):
     def current_api_useage_formatted(self):
         # Fetching the current state of call counters
         current_call_counters = self.service.getCallCountersState()
-        
+
         # Initialize an empty dictionary to store the results
         result = {}
 
         # Iterate over each object in the call counter state
         for obj in current_call_counters:
-            timeout = obj['timeout']
+            timeout = obj["timeout"]
 
             # Iterate over each state in the callCounterStates of the current object
-            for state in obj['callCounterStates']:
-                operation_type = state['operationType']
+            for state in obj["callCounterStates"]:
+                operation_type = state["operationType"]
 
                 # If the operation type has not been added to the result dictionary, add it with an empty list as its value
                 if operation_type not in result:
                     result[operation_type] = []
 
                 # Format the usage as a tuple where the first element is the timeout and the second element is a formatted string
-                usage = (timeout, f"{timeout: >5}: {state['value']: >7}/{state['limit']}")
-                
+                usage = (
+                    timeout,
+                    f"{timeout: >5}: {state['value']: >7}/{state['limit']}",
+                )
+
                 # Add the formatted usage to the list of usages for the current operation type
                 result[operation_type].append(usage)
-            
+
         # Sort the dictionary by keys (operation types)
         result = dict(sorted(result.items()))
 
@@ -186,12 +203,14 @@ class Five9Client(zeep.Client):
         for operation_type, usages in result.items():
             usages.sort()  # Sorting the list of usages
             # Format the output string for the current operation type and add it to the list of formatted outputs
-            formatted_output.append("{}:\n{}".format(operation_type, "\n".join(["\t"+u[1] for u in usages])))
+            formatted_output.append(
+                "{}:\n{}".format(
+                    operation_type, "\n".join(["\t" + u[1] for u in usages])
+                )
+            )
 
         # Join the list of formatted outputs into a single string with two newlines between each section
         return "\n\n".join(formatted_output)
-
-
 
     @property
     def latest_request_headers(self):
@@ -213,7 +232,7 @@ class Five9Client(zeep.Client):
 
             if auth_header_value:
                 request_string += f"Authorization: {auth_header_value}"
-            
+
             return request_string
 
         else:
@@ -221,7 +240,6 @@ class Five9Client(zeep.Client):
 
     # TODO class method to obtain the domain rate limits to update a class property
     # that helps bake in a delay between requests if needed
-
 
     def print_available_service_methods(self, print_methods=True):
         """
@@ -267,7 +285,9 @@ if __name__ == "__main__":
     password = args["password"] or None
     account = args["account"] or None
     get_objects = args["getobjects"] or None
-    client = Five9Client(five9username=username, five9password=password, account=account)
+    client = Five9Client(
+        five9username=username, five9password=password, account=account
+    )
 
     if get_objects:
         users = client.service.getUsersInfo()

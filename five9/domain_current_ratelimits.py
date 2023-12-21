@@ -44,7 +44,7 @@ if __name__ == "__main__":
     client = five9_session.Five9Client(
         five9username=args.username,
         five9password=args.password,
-        account=args.account_alias
+        account=args.account_alias,
     )
-    
+
     print(client.current_api_useage_formatted)

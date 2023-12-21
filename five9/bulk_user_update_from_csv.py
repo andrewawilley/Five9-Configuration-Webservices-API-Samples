@@ -90,9 +90,9 @@ def update_user_details(
         # each row is a dictionary with the header as the key and the value as the value
         for row in reader:
             users_from_csv[row["userName"]] = row
-    
+
     print("\nChecking for fields to update")
-    for vcc_user in vcc_users:        
+    for vcc_user in vcc_users:
         try:
             target_user = users_from_csv.get(vcc_user.userName, None)
             user_needs_update = False
@@ -103,11 +103,15 @@ def update_user_details(
                     # get the datatype of the vcc_user[target_field_name]
                     datatype = type(vcc_user[target_field_name])
                     # convert the target_field_value to the datatype of the vcc_user[target_field_name]
-                    target_field_value = datatype_conversion(datatype, target_field_value)
+                    target_field_value = datatype_conversion(
+                        datatype, target_field_value
+                    )
 
                     if target_field_value != vcc_user[target_field_name]:
                         if simulation_mode == True:
-                            print(f'\t{vcc_user.userName}: {target_field_name} = "{target_field_value}"')
+                            print(
+                                f'\t{vcc_user.userName}: {target_field_name} = "{target_field_value}"'
+                            )
                         vcc_user[target_field_name] = target_field_value
                         user_needs_update = True
 
@@ -129,7 +133,7 @@ def update_user_details(
                     client.service.modifyUser(user)
             except Exception as e:
                 update_errors.append((user, e))
-    print('\n')
+    print("\n")
 
     if len(update_errors) > 0:
         print(f"\nErrors updating users:")
@@ -221,7 +225,5 @@ if __name__ == "__main__":
     )
 
     update_user_details(
-        client,
-        target_filename=target_filename,
-        simulation_mode=simulation_mode
+        client, target_filename=target_filename, simulation_mode=simulation_mode
     )

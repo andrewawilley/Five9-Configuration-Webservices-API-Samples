@@ -42,19 +42,18 @@ class TestDomainCapture(unittest.TestCase):
             self.domain_configuration = Five9DomainConfig(
                 client=self.client,
                 # methods=["getCampaignProfiles"]
-            ) 
+            )
             get_objects = True
-        
+
         if get_objects:
             self.domain_configuration.get_domain_objects()
 
-
     def test_domain_config_capture(self):
         self.domain_configuration = Five9DomainConfig(
-            client=self.client, 
+            client=self.client,
             # methods=["getCampaignProfiles"]
         )
-        
+
         # self.assertEqual(self.domain_configuration.client, self.client)
 
         # assert that a folder was created matching the domain name in the
@@ -62,7 +61,9 @@ class TestDomainCapture(unittest.TestCase):
         self.assertTrue(os.path.exists(self.domain_configuration.domain_path))
 
         # assert that there is a git repo in the domain_config/domain_snapshots folder
-        self.assertTrue(os.path.exists(os.path.join(self.domain_configuration.domain_path, ".git")))        
+        self.assertTrue(
+            os.path.exists(os.path.join(self.domain_configuration.domain_path, ".git"))
+        )
 
     def test_domain_config_capture_campaign_profiles(self):
         # assert that a a demystified campaign profile was created for each
@@ -76,8 +77,9 @@ class TestDomainCapture(unittest.TestCase):
                 and campaign["mode"] == "ADVANCED"
                 and campaign["profileName"]
                 and self.domain_configuration.domain_objects[
-                        "getCampaignProfiles_campaign_profile_filters"
-                    ][campaign["profileName"]]["grouping"]["type"] == "Custom"
+                    "getCampaignProfiles_campaign_profile_filters"
+                ][campaign["profileName"]]["grouping"]["type"]
+                == "Custom"
                 and len(
                     self.domain_configuration.domain_objects[
                         "getCampaignProfiles_campaign_profile_filters"
@@ -95,7 +97,4 @@ class TestDomainCapture(unittest.TestCase):
                     campaign["profileName"] + ".txt",
                 )
                 print(demystified_campaign_profile_path)
-                self.assertTrue(
-                    os.path.exists(demystified_campaign_profile_path)
-                )
-
+                self.assertTrue(os.path.exists(demystified_campaign_profile_path))

@@ -9,6 +9,7 @@ from zeep.plugins import HistoryPlugin
 
 try:
     import sys
+
     sys.path.append("..")
     from private.credentials import ACCOUNTS
 except:
@@ -82,6 +83,7 @@ except requests.exceptions.HTTPError as e:
 
 # this method needs to be called to initialize the session
 
+
 def set_session_parameters(view_settings=None):
     # page 59 of the Statistics Webservices API Reference Guide
     if view_settings is None:
@@ -123,8 +125,8 @@ set_session_parameters()
 
 # If you only need certain columns returned:
 specific_statistics = get_specific_statistics(
-    statistics_request_type,
-    statistics_request_columns)
+    statistics_request_type, statistics_request_columns
+)
 
 print(specific_statistics)
 # statistics = get_statistics(statistics_request_type)

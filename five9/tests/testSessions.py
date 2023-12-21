@@ -77,9 +77,9 @@ class TestFive9Session(unittest.TestCase):
                 '<soap-env:Envelope xmlns:soap-env="http://schemas.xmlsoap.org/soap/envelope/">'
             )
         )
-        
+
         self.assertTrue(
-            test_client.latest_envelope_received.startswith(                
+            test_client.latest_envelope_received.startswith(
                 '<env:Envelope xmlns:env="http://schemas.xmlsoap.org/soap/envelope/">'
             )
         )
@@ -106,13 +106,11 @@ class TestFive9Session(unittest.TestCase):
             )
         )
 
-
-
     @patch("sys.stdout", new_callable=StringIO)
     def test_client_show_available_service_methods(self, mock_stdout):
         test_client = five9_session.Five9Client(account=self.account)
         test_client.print_available_service_methods()
-        
+
         # test that the client.available_methods prints a list of available methods
         self.assertIsNot(mock_stdout.getvalue(), "")
         test_client.service.closeSession()
