@@ -4,7 +4,7 @@ import five9_session
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Gets the current callCountersState for the target account"
+        description="Gets the current callCountersState for the target account.  IMPORTANT: ONLY COUNTS API USAGE FOR THE SPECIFIED ACCOUNT.  DOES NOT COUNT USAGE FOR OTHER ACCOUNTS IN THE SAME FIVE9 ORG."
     )
 
     parser.add_argument(

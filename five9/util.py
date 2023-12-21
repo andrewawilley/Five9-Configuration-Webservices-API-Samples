@@ -14,25 +14,30 @@ def get_random_password(
     characters_to_avoid=["O", "0", "=", "|", " ", '"', "'", ",", "`"],
 ):
     """
-    Return a randomly generated password of a specified length and composition
+    Generates a random password based on specified requirements.
 
-    Keyword arguments:
-    length -- the desired password length, default 20
-    required_digits -- minimum number of password characters that are digits, default 2
-    required_lower  -- minimum number of password characters that are lowercase a-z, default 2
-    required_caps   -- minimum number of password characters that are uppercase A-Z, default 2
-    required_special-- minimum number of password characters that are non-alphanumeric, default 2
+    Args:
+    length (int): The total length of the password. Defaults to 20.
+    required_digits (int): Minimum number of numeric characters in the password. Defaults to 2.
+    required_lower (int): Minimum number of lowercase alphabetic characters. Defaults to 2.
+    required_caps (int): Minimum number of uppercase alphabetic characters. Defaults to 2.
+    required_special (int): Minimum number of special (non-alphanumeric) characters. Defaults to 1.
+    characters_to_avoid (list): A list of characters that should be excluded from the password.
+                                Defaults to ["O", "0", "=", "|", " ", '"', "'", ",", "`"].
 
-    characters_to_avoid -- list of characters that should be excluded from the password,
-                           default = ["O", "0", "=", "|", " ", "\"", "'", ",", "`" ]
-
+    Returns:
+    str: The generated random password.
     """
+
+    # Seed the random number generator for randomness
     random.seed()
 
+    # Create a pool of characters for the password, excluding specified characters
     password_characters = (
         string.ascii_letters + string.digits + string.punctuation
     ).translate({ord(x): "" for x in characters_to_avoid})
 
+    # Generate the required lowercase characters
     password_lower = "".join(
         random.choice(
             string.ascii_letters.lower().translate(
@@ -42,6 +47,7 @@ def get_random_password(
         for i in range(required_lower)
     )
 
+    # Generate the required uppercase characters
     password_caps = "".join(
         random.choice(
             string.ascii_letters.upper().translate(
@@ -51,6 +57,7 @@ def get_random_password(
         for i in range(required_caps)
     )
 
+    # Generate the required digit characters
     password_digits = "".join(
         random.choice(
             string.digits.translate({ord(x): "" for x in characters_to_avoid})
@@ -58,6 +65,7 @@ def get_random_password(
         for i in range(required_digits)
     )
 
+    # Generate the required special characters
     password_spec = "".join(
         random.choice(
             string.punctuation.translate({ord(x): "" for x in characters_to_avoid})
@@ -65,24 +73,44 @@ def get_random_password(
         for i in range(required_special)
     )
 
+    # Calculate the number of additional random characters needed
     rnd_char_count = (
         length - required_digits - required_lower - required_caps - required_special
     )
 
+    # Generate the additional random characters
     password_base = "".join(
         random.choice(password_characters) for i in range(rnd_char_count)
     )
+
+    # Combine all parts of the password
     password = (
         password_base + password_lower + password_caps + password_digits + password_spec
     )
+
+    # Shuffle the combined password to mix the character types
     password = list(password)
     random.shuffle(password)
     password = "".join(password)
-    # print(f'{password_base} {password_lower} {password_caps} {password_digits} {password_spec} = {password}')
+
+    # Return the final password
     return password
 
 
 def ivr_variable_usage(ivrs, verbose=False):
+    """
+    Analyzes a list of IVR (Interactive Voice Response) objects to identify the usage of script variables within them.
+
+    Args:
+    ivrs (list): A list of IVR objects (should be obtained from the getIvrScripts method).
+    verbose (bool): If True, the function prints the dictionary of variables and their corresponding IVRs in JSON format. Defaults to False.
+
+    The function scans through the 'xmlDefinition' of each IVR object looking for script variables. It ignores any IVR objects with "EXAMPLE" in their name. Each variable is then cataloged along with the IVR names where it appears.
+
+    Returns:
+    OrderedDict: A dictionary where keys are script variable names and values are lists of IVR names where these variables are used. The dictionary is sorted alphabetically by the variable names.
+    """
+
     # Initialize an empty dictionary to store the script variables and the IVRs where they appear
     ivr_variables = {}
 
