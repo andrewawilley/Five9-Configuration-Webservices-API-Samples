@@ -1,63 +1,52 @@
-import csv
-import datetime
-import time
-
 import five9_session
-
 from util import get_random_password
+from tqdm import tqdm
 
-client = five9_session.Five9Client()
 
+def bulk_create_users(client, user_data, template_agent_username):
+    """
+    Bulk creates user accounts in the Five9 domain based on provided user data and a template agent.
 
-# add in all the username/password combos with the required fields below
-# here's an example of an excel formula used in one of the bulk user requests to generate a formatted user object
-# ="{'userName': '"&G2&"', 'password': 'Ssmsba1!', 'firstName': '"&E2&"', 'lastName': '"&F2&"', 'EMail': '"&D2&"',},"
-adds = [
-    {
-        "userName": "alejandro.sigaran@mytestdomain",
-        "password": get_random_password(),
-        "firstName": "Alejandro",
-        "lastName": "Sigaran",
-        "EMail": "test1@gmail.com",
-    },
-    {
-        "userName": "tama.clark@mytestdomain",
-        "password": get_random_password(),
-        "firstName": "Tama",
-        "lastName": "Clark",
-        "EMail": "test2@gmail.com",
-    },
-    {
-        "userName": "danielle.hershey@mytestdomain",
-        "password": get_random_password(),
-        "firstName": "Danielle",
-        "lastName": "Hershey",
-        "EMail": "test3@yahoo.com",
-    },
-]
+    This function creates new user accounts using the specified template agent's roles and skills.
+    Each user in the `user_data` list is created with unique credentials and the same roles and skills
+    as the template agent.
 
-created = 0
-processed = 0
-target_updates = len(adds)
+    Parameters:
+    client: Zeep Client object
+        The client used to interact with the Five9 domain.
+    user_data: list of dicts
+        A list of dictionaries, each representing a user to be created.
+        Each dictionary should contain keys: 'userName', 'password', 'firstName', 'lastName', 'EMail'.
+    template_agent_username: str
+        The username of the template agent whose roles and skills will be copied.
 
-# Identify a template agent that has the roles/skills that you want these users to have
-template_agent = client.service.getUserInfo("testguy1@aw_tam")
-roles = template_agent.roles
-skills = template_agent.skills
+    Returns:
+    list:
+        A list of successfully created user objects.
 
-added_users = []
+    Raises:
+    Exception
+        If an error occurs during the user creation process.
+    """
 
-for user in adds:
-    try:
-        skills[0].userName = user["userName"]
-        nu = client.service.createUser({"generalInfo": user})
-        # print(f'{nu.generalInfo.userName}')
-        added_users.append(nu)
-        created += 1
-    except:
-        f = user["userName"]
-        print(f"\nFAILED: {f}\n")
-    processed += 1
-    print(f"Updated:\t{created}/{target_updates}", end="\r")
+    # Fetch template agent details
+    template_agent = client.service.getUserInfo(template_agent_username)
+    roles = template_agent.roles
+    skills = template_agent.skills
 
-print(f"Updated:\t{created}/{target_updates}")
+    created_users = []
+
+    with tqdm(total=len(user_data), desc="Creating users", mininterval=1) as pbar:
+        for user in user_data:
+            try:
+                # Assign template agent skills to new user
+                skills[0].userName = user["userName"]
+                new_user = client.service.createUser({"generalInfo": user})
+                created_users.append(new_user)
+            except Exception as e:
+                print(f"\nFAILED to create user '{user['userName']}': {e}\n")
+            finally:
+                pbar.update(1)
+                pbar.set_postfix({"Created": len(created_users)})
+
+    return created_users
