@@ -4,6 +4,7 @@ import random
 import re
 import string
 
+
 def get_random_password(
     length=20,
     required_digits=2,
@@ -21,7 +22,7 @@ def get_random_password(
     required_lower (int): Minimum number of lowercase alphabetic characters. Defaults to 2.
     required_caps (int): Minimum number of uppercase alphabetic characters. Defaults to 2.
     required_special (int): Minimum number of special (non-alphanumeric) characters. Defaults to 1.
-    characters_to_avoid (list): A list of characters that should be excluded from the password. 
+    characters_to_avoid (list): A list of characters that should be excluded from the password.
                                 Defaults to ["O", "0", "=", "|", " ", '"', "'", ",", "`"].
 
     Returns:
@@ -97,6 +98,19 @@ def get_random_password(
 
 
 def ivr_variable_usage(ivrs, verbose=False):
+    """
+    Analyzes a list of IVR (Interactive Voice Response) objects to identify the usage of script variables within them.
+
+    Args:
+    ivrs (list): A list of IVR objects (should be obtained from the getIvrScripts method).
+    verbose (bool): If True, the function prints the dictionary of variables and their corresponding IVRs in JSON format. Defaults to False.
+
+    The function scans through the 'xmlDefinition' of each IVR object looking for script variables. It ignores any IVR objects with "EXAMPLE" in their name. Each variable is then cataloged along with the IVR names where it appears.
+
+    Returns:
+    OrderedDict: A dictionary where keys are script variable names and values are lists of IVR names where these variables are used. The dictionary is sorted alphabetically by the variable names.
+    """
+
     # Initialize an empty dictionary to store the script variables and the IVRs where they appear
     ivr_variables = {}
 
