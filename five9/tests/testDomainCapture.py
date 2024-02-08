@@ -1,8 +1,7 @@
 # unittests for the domain_capture module
 
-import pickle
 import unittest
-from unittest.mock import patch
+# from unittest.mock import patch
 
 from five9.utils.domain_capture import *
 from five9_session import Five9Client

@@ -1,3 +1,4 @@
+import datetime
 import random
 import string
 
@@ -92,3 +93,52 @@ def get_random_password(
 
     # Return the final password
     return password
+
+def datatype_conversion(datatype, value):
+    """
+    Converts a given value to a specified datatype.
+
+    This function attempts to convert a given string value to a specified datatype such as int, float, bool, or datetime.
+    It handles common representations for boolean values and uses standard parsing for numeric and datetime types.
+    If the conversion fails or the datatype is not supported, it raises an exception.
+
+    Args:
+    datatype (type): The target datatype to which the value needs to be converted. Supported types are int, float, bool, datetime, str, and NoneType.
+    value (str): The string value that needs to be converted.
+
+    Returns:
+    The converted value in the specified datatype. If the datatype is str or NoneType, the original value is returned without conversion.
+
+    Raises:
+    Exception: If the conversion is not successful or the datatype is not supported.
+    
+    Note:
+    - For boolean conversion, the function recognizes "true", "t", "yes", "y", "1" as True, and "false", "f", "no", "n", "0" as False (case-insensitive).
+    - For datetime conversion, the function uses the 'dateutil.parser.parse' method, so the input string should be in a recognizable datetime format.
+    """
+    try:
+        if datatype in [str, type(None)]:
+            return value
+
+        if datatype == bool:
+            if value.lower() in ["true", "t", "yes", "y", "1"]:
+                return True
+            elif value.lower() in ["false", "f", "no", "n", "0"]:
+                return False
+            else:
+                raise Exception(f"Unable to convert {value} to {datatype}")
+
+        # if int, return the int value of the string
+        if datatype == int:
+            return int(value)
+
+        # if float, return the float value of the string
+        if datatype == float:
+            return float(value)
+
+        # if datetime, return the datetime value of the string
+        if datatype == datetime:
+            return datetime.parser.parse(value)
+
+    except Exception as e:
+        raise Exception(f"Unable to convert {value} to {datatype}")
