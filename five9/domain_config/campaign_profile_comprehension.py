@@ -130,6 +130,9 @@ def demystify_filter(profile_filter, verbose=False):
 
 
 def remystify_filter_in_place(nice_filter):
+    """
+    Converts a "nice filter" string into a format that can be used by the Five9 Configuration Webservices API.
+    """
     nice_filter = re.sub(r"\[.*?\]\[", "", nice_filter)
     nice_filter = nice_filter.replace("]", "").replace("\t", "").replace("\n", "")
     return nice_filter
