@@ -1,10 +1,10 @@
 import argparse
 
-import five9_session
+from five9.utils import domain_capture
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Gets the current callCountersState for the target account.  IMPORTANT: ONLY COUNTS API USAGE FOR THE SPECIFIED ACCOUNT.  DOES NOT COUNT USAGE FOR OTHER ACCOUNTS IN THE SAME FIVE9 ORG."
+        description="demystifies campaign profile filter expressions"
     )
 
     parser.add_argument(
@@ -41,10 +41,10 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    client = five9_session.Five9Client(
-        five9username=args.username,
-        five9password=args.password,
+    domain = domain_capture.Five9DomainConfig(
+        username=args.username,
+        password=args.password,
         account=args.account_alias,
+        methods=["getCampaignProfiles"],
     )
-
-    print(client.current_api_useage_formatted)
+    domain.demystify_campaign_profile_filters(verbose=args.verbose or False)

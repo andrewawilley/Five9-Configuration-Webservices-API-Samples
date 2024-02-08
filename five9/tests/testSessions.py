@@ -3,7 +3,7 @@ from io import StringIO
 import unittest
 from unittest.mock import patch
 
-import five9_session
+from five9 import five9_session
 from private.credentials import ACCOUNTS
 
 # run with coverage

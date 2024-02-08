@@ -1,6 +1,6 @@
 import argparse
 
-from domain_config import domain_capture
+from five9.utils import domain_capture
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(

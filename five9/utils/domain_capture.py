@@ -6,7 +6,7 @@ import time
 from git import Repo
 import zeep
 
-import five9_session
+from five9 import five9_session
 from .campaign_profile_comprehension import demystify_filter
 
 API_SLEEP_INTERVAL = 0.3

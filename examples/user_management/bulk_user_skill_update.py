@@ -3,7 +3,8 @@ import datetime
 import time
 import zeep
 from tqdm import tqdm
-import five9_session
+
+from five9 import five9_session
 
 
 def manage_user_skills(client, users_to_update, skills_to_add, skills_to_remove):
