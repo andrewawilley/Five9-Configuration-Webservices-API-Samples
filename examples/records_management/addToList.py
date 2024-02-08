@@ -1,9 +1,15 @@
-import five9_session
+from five9 import five9_session
 
 client = five9_session.Five9Client()
 
 # set the target list name
 target_list = "outreach"
+
+records_to_add = {
+    "values": [
+        ["9133259337", "abcd123456789", "anrew@livingston.com"],
+    ]
+}
 
 # add a single record to the designated list
 result_identifier = client.service.addRecordToList(
@@ -13,7 +19,7 @@ result_identifier = client.service.addRecordToList(
             # fieldsMapping objects to map data to the columns
             # Note that the key fields combine to create unique-together constraints that are used
             # to create or update the underlying contact records.
-            {"columnNumber": 1, "fieldName": "number1", "key": "true"},
+            {"columnNumber": 1, "fieldName": "number1", "key": "false"},
             {"columnNumber": 2, "fieldName": "uuid", "key": "true"},
             {"columnNumber": 3, "fieldName": "email", "key": "false"},
         ],
@@ -26,7 +32,7 @@ result_identifier = client.service.addRecordToList(
         "crmUpdateMode": "UPDATE_FIRST",  # CAUTION - ensure proper record key values are set
         "listAddMode": "ADD_FIRST",  # if multiple contactDB records are matched, determine if multiple list entries should be added.
     },
-    record=[{"fields": ["9133259337", "abcd123456789", "anrew@livingston.com"]}],
+    importData=records_to_add,
 )
 
 # uncomment to see the latest envelopes

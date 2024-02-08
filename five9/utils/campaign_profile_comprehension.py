@@ -152,7 +152,7 @@ def remystify_filter(nice_filter):
     nice_filter = re.sub(r"(\[([0-9]*)\])", "", nice_filter)
 
     # Compile a regular expression to match strings enclosed in brackets
-    condition_pattern = re.compile("\[(.*?)\]")
+    condition_pattern = re.compile(r"\[(.*?)\]")
 
     # Find all occurrences of the condition pattern in the nice filter string
     conditions = condition_pattern.finditer(nice_filter)

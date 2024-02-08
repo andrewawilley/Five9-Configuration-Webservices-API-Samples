@@ -6,7 +6,7 @@ import os
 from dateutil.parser import parse
 import tqdm
 
-import five9_session
+from five9 import five9_session
 
 
 def datatype_conversion(datatype, value):

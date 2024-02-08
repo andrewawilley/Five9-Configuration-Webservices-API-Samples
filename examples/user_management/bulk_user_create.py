@@ -1,5 +1,5 @@
-import five9_session
-from util import get_random_password
+from five9 import five9_session
+from five9.util import get_random_password
 from tqdm import tqdm
 
 

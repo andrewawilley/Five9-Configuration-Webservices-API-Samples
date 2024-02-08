@@ -4,7 +4,7 @@ import time
 
 import zeep
 
-import five9_session
+from five9 import five9_session
 
 
 client = five9_session.Five9Client()

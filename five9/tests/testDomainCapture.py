@@ -1,10 +1,9 @@
 # unittests for the domain_capture module
 
-import pickle
 import unittest
-from unittest.mock import patch
+# from unittest.mock import patch
 
-from domain_config.domain_capture import *
+from five9.utils.domain_capture import *
 from five9_session import Five9Client
 
 from private.credentials import ACCOUNTS

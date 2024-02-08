@@ -2,7 +2,7 @@ import argparse
 import csv
 from datetime import datetime
 
-import five9_session
+from five9 import five9_session
 
 
 def capture_user_details(
