@@ -40,10 +40,9 @@ from the shell, navigate to the local copy (change to the directory that the rep
     source venvs/five9/bin/activate
 
 ### finishing up
-    pip install -r requirements.txt
-    py.exe bootstrap.py
+    pip install -e .
 
-The bootstrap.py script will create a private folder that can contain a credentials.py file where you can keep reusable Five9 admin API user credentials in a slightly more secure way than right in the script.  The private folder is excluded from Git.  
+The setup script will create a private folder that can contain a credentials.py file where you can keep reusable Five9 admin API user credentials in a slightly more secure way than right in the script.  The private folder is excluded from Git.  
 
 The credentials object in private.credentials looks like this:
 

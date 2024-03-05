@@ -404,5 +404,5 @@ class Five9DomainConfig:
                 target_filename = os.path.join(subfolder_path, pf)
                 demystified = demystify_filter(profile_filter, verbose=verbose)
                 self.write_object_to_target_path(
-                    target_path=target_filename, domain_object=demystified, toJson=False
+                    target_path=target_filename, domain_object=demystified, toJson=False, filetype="sql"
                 )

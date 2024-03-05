@@ -1,5 +1,3 @@
-import csv
-import datetime
 import time
 import zeep
 from tqdm import tqdm

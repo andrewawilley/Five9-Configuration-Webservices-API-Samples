@@ -9,7 +9,10 @@ import requests
 import zeep
 from zeep.plugins import HistoryPlugin
 
-from private.credentials import ACCOUNTS
+try:
+    from private.credentials import ACCOUNTS
+except ImportError:
+    ACCOUNTS = {}
 
 
 class Five9ClientCreationError(Exception):

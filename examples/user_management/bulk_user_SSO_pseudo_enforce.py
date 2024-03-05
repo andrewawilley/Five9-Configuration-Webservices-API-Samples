@@ -4,7 +4,7 @@ from tqdm import tqdm
 import zeep
 
 # from five9 import five9_session
-from five9.util import get_random_password
+from five9.utils.general import get_random_password
 
 
 def pseudo_enforce_SSO(
