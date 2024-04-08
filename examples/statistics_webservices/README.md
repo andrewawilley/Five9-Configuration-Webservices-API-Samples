@@ -9,6 +9,13 @@
 3. getStatisticsUpdate (optional)
     - optionally, call this method in a long-running loop, using the timestamp from the initial getStatistics method as the starting point.  This method also includes a timestamp parameter to use subsequently to obtain only the statistics that changed since the last update.
 
+## Important
+
+The Five9 API operates on a single-threaded model, meaning that it can process only one request at a time. Consequently, all requests to fetch statistics or receive updates must be made in a sequential order. This approach ensures that each request is completed before the next one begins, maintaining the integrity of the session's workflow.
+
+
+For sessions that may track multiple types of statistics (e.g., AgentState, AgentStatistics, ACDStatus), design such that each statistics category maintains its own "previous timestamp" value for use in the statistics update request for that statistics type.
+
 # statisticType
 
 Per Page 31 of the Statistics Webservices API documentation, the following statisticTypes are available on the endpoint:
