@@ -1,143 +1,126 @@
 import csv
 import datetime
+
+import logging
+
 import time
 
-from lxml import etree
-import requests
-import zeep
-from zeep.plugins import HistoryPlugin
+from five9.five9_session import Five9Client
 
-try:
-    import sys
-
-    sys.path.append("..")
-    from private.credentials import ACCOUNTS
-except:
-    print("No saved account credentials discovered")
-    ACCOUNTS = {}
-
-################################################################################
-# This section could be moved into a re-usable module, but for the sake of
-# example is verbose and not optomized.
+logging.basicConfig(level=logging.INFO)
 
 
-# This function prints the SOAP envelope for the request and/or response
-def zeep_history_print(history, last_sent=True, last_received=True):
-    try:
-        if last_sent is True:
-            print(
-                etree.tostring(
-                    history.last_sent["envelope"], encoding="unicode", pretty_print=True
-                )
+class Five9Statistics:
+    def __init__(
+        self,
+        client,
+        statistics_request_type,
+        statistics_request_columns=None,
+        long_polling_timeout=5000,
+        update_timeout_seconds=5,
+    ):
+        self.client = client
+        self.statistics_request_type = statistics_request_type
+        self.statistics_request_columns = statistics_request_columns
+
+        self.long_polling_timeout = long_polling_timeout
+        
+        self.update_timeout_seconds = update_timeout_seconds
+        self.last_checked_timestamp = 0
+
+
+        self.statistics = None
+        self.statistics_timestamp = None
+
+    def get_statistics(self):
+        if self.statistics_request_columns is not None:
+            self.statistics = self.client.service.getStatistics(
+                statisticType=self.statistics_request_type,
+                columnNames=self.statistics_request_columns,
             )
-        if last_received is True:
-            print(
-                etree.tostring(
-                    history.last_received["envelope"],
-                    encoding="unicode",
-                    pretty_print=True,
-                )
+            
+        else:
+            self.statistics = self.client.service.getStatistics(
+                self.statistics_request_type
             )
-    except (IndexError, TypeError):
-        # noncritical if fails here, pass
-        pass
+
+        self.last_checked_timestamp = time.time()
+        self.statistics_timestamp = self.statistics.timestamp
+        logging.info(f"Initial statistics for {self.statistics_request_type} obtained at {self.last_checked_timestamp}, next update in {self.update_timeout_seconds} seconds")
+
+    def get_statistics_update(self):
+        try:
+            # if the current time is greater than the last checked timestamp plus the update timeout, then get the update
+            if time.time() > self.last_checked_timestamp + self.update_timeout_seconds:
+                logging.info(f"\n\n{self.statistics_request_type}\t last checked at {self.last_checked_timestamp}")
+                self.statistics = self.client.service.getStatisticsUpdate(
+                    statisticType=self.statistics_request_type,
+                    previousTimestamp=self.statistics_timestamp,
+                    longPollingTimeout=self.long_polling_timeout,
+                )
+                self.statistics_timestamp = self.statistics.lastTimestamp
+                logging.debug(self.client.latest_envelope_received)
+                logging.info(self.statistics)
+                # update the last checked timestamp to the current time in milliseconds
+                self.last_checked_timestamp = time.time()
+        except AttributeError:
+            logging.info(
+                f"{self.statistics_request_type} UNCHANGED since {self.statistics_timestamp}"
+            )
+            self.last_checked_timestamp = time.time()
 
 
-# initialize the zeep history object
-history = HistoryPlugin()
 
-# url and user settings consolidated here for convenience to use later
-settings = {
-    "FIVENINE_CONFIG_WEBSERVICES_API": "https://api.five9.com/wssupervisor/v12/SupervisorWebService?wsdl&user={five9username}",
+
+if __name__ == "__main__":
+    client = Five9Client(sessiontype="statistics")
+
+view_settings = {
+    "forceLogoutSession": "yes",
+    # [Minutes5,Minutes10,Minutes15,Minutes30,Hour1,Hours2,Hours3,Today]
+    "rollingPeriod": "Today",
+    "shiftStart": "28800000",
+    "statisticsRange": "CurrentWeek",
+    "timeZone": "-25200000",
 }
-
-
-# Target the desired account using the alias in private.credentials
-api_account_alias = "default_account"
-api_account = ACCOUNTS.get(api_account_alias, {})
-
-if api_account.get("username", None) in [None, "apiUserUsername"]:
-    five9username = input("Enter Username: ")
-    five9password = input("Enter Password: ")
-else:
-    five9username = api_account.get("username", None)
-    five9password = api_account.get("password", None)
-
-# prepare the session with BasicAuth headers
-session = requests.Session()
-session.auth = requests.auth.HTTPBasicAuth(five9username, five9password)
-try:
-    client = zeep.Client(
-        settings["FIVENINE_CONFIG_WEBSERVICES_API"].format(five9username=five9username),
-        transport=zeep.Transport(session=session),
-        plugins=[
-            history,
-        ],
-    )
-    print(f"Client created successfully for {five9username}")
-except requests.exceptions.HTTPError as e:
-    client = None
-    print(e)
-################################################################################
-
-
-# this method needs to be called to initialize the session
-
-
-def set_session_parameters(view_settings=None):
-    # page 59 of the Statistics Webservices API Reference Guide
-    if view_settings is None:
-        view_settings = {
-            "forceLogoutSession": "yes",
-            # [Minutes5,Minutes10,Minutes15,Minutes30,Hour1,Hours2,Hours3,Today]
-            "rollingPeriod": "Today",
-            "shiftStart": "28800000",
-            "statisticsRange": "CurrentWeek",
-            "timeZone": "-25200000",
-        }
-    client.service.setSessionParameters(viewSettings=view_settings)
-    # c = client.service.getColumnNames('AgentState')
-    # print(c)
-
-
-def get_specific_statistics(statistics_request_type, statistics_request_columns):
-    set_session_parameters()
-    c = client.service.getColumnNames()
-    print(c)
-    return client.service.getStatistics(
-        statisticType=statistics_request_type, columnNames=statistics_request_columns
-    )
-
-
-def get_statistics(statistics_request_type):
-    set_session_parameters()
-    return client.service.getStatistics(statisticType=statistics_request_type)
-
-
-statistics_request_type = "AgentStatistics"
-# statistics_request_type = "AgentState"
-# Optionally specify only the columns desired for the statistics updates
-statistics_request_columns = {
-    "values": {"data": ["Username", "Full Name", "State", "State Since"]}
-}
-
-set_session_parameters()
-
-# If you only need certain columns returned:
-specific_statistics = get_specific_statistics(
-    statistics_request_type, statistics_request_columns
+client.session_parameters = client.service.setSessionParameters(
+    viewSettings=view_settings
 )
 
-print(specific_statistics)
-# statistics = get_statistics(statistics_request_type)
+# Set the session parameters
+statistics_request_types = [
+    {
+        "type": "AgentState",
+        "statistics_request_columns": {
+            "values": {"data": ["Username", "Full Name", "State", "State Since"]}
+        },
+    }
+]
 
-# statistics_timestamp = statistics.timestamp
+stats = [
+    Five9Statistics(
+        client,
+        "AgentState",
+        statistics_request_columns={
+            "values": {"data": ["Username", "Full Name", "State", "State Since"]}
+        },
+    ),
+    Five9Statistics(
+        client,
+        "AgentStatistics"
+    ),
+    Five9Statistics(
+        client,
+        "ACDStatus"
+    )
+]
 
-# statistics_update = client.service.getStatisticsUpdate(
-#     statisticType=statistics_request_type,
-#     previousTimestamp=statistics_timestamp,
-#     longPollingTimeout=5000,
-# )
+# Get the initial statistics
+for stat in stats:
+    stat.get_statistics()
 
-# if putting statistics_update in a loop, use statistics_update.lastTimestamp
-# in subsequent update requests.
+
+# Get the statistics updates
+while True:
+    for stat in stats:
+        stat.get_statistics_update()

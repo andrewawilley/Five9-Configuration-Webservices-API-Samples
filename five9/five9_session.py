@@ -24,9 +24,16 @@ class Five9Client(zeep.Client):
     history = None
 
     def __init__(self, *args, **kwargs):
+
+        sessiontype_details = {
+            "admin": ("wsadmin", ""),
+            "statistics": ("wssupervisor", "SupervisorWebService"),
+        }
+
         five9username = kwargs.get("five9username", None)
         five9password = kwargs.get("five9password", None)
         account = kwargs.get("account", None)
+        sessiontype = kwargs.get("sessiontype", "admin")
         api_hostname = kwargs.get("api_hostname", "api.five9.com")
         api_version = kwargs.get("api_version", "v12")
 
@@ -34,7 +41,7 @@ class Five9Client(zeep.Client):
 
         # url and user settings consolidated here for convenience to use later
         api_definition_base = (
-            "https://{api_hostname}/wsadmin/{api_version}/?wsdl&user={five9username}"
+            "https://{api_hostname}/{sessiontype}/{api_version}/{sessiontype_path}?wsdl&user={five9username}"
         )
 
         if five9username == None and five9password == None:
@@ -59,6 +66,8 @@ class Five9Client(zeep.Client):
 
         self.api_definition = api_definition_base.format(
             api_hostname=api_hostname,
+            sessiontype=sessiontype_details[sessiontype][0],
+            sessiontype_path=sessiontype_details[sessiontype][1],
             api_version=api_version,
             five9username=five9username,
         )
@@ -79,7 +88,10 @@ class Five9Client(zeep.Client):
             #     transport=zeep.Transport(session=self.transport_session),
             #     plugins=[self.history],
             # )
-            self.call_counters = self.service.getCallCountersState()
+            
+            # Fetching the current state of call counters if sessiontype is admin
+            if sessiontype == "admin":
+                self.call_counters = self.service.getCallCountersState()
 
             print(f"Client ready for {five9username}")
 
@@ -275,6 +287,24 @@ if __name__ == "__main__":
         help="Alias for credential stored in private/credentials",
         required=False,
     )
+    parser.add_argument(
+        "-t",
+        "--sessiontype",
+        help="admin or Statistics session type",
+        required=False,
+    )
+    parser.add_argument(
+        "-h",
+        "--hostname",
+        help="hostname to target, default is api.five9.com",
+        required=False,
+    )
+    parser.add_argument(
+        "-v",
+        "--version",
+        help="api version to target, default is v12",
+        required=False,
+    )
 
     parser.add_argument(
         "-go",
@@ -287,9 +317,12 @@ if __name__ == "__main__":
     username = args["username"] or None
     password = args["password"] or None
     account = args["account"] or None
+    hostname = args["hostname"] or "api.five9.com"
+    sessiontype = args["sessiontype"] or "admin"
+    sessiontype = sessiontype.lower()
     get_objects = args["getobjects"] or None
     client = Five9Client(
-        five9username=username, five9password=password, account=account
+        five9username=username, five9password=password, account=account, sessiontype=sessiontype, api_hostname=hostname
     )
 
     if get_objects:
