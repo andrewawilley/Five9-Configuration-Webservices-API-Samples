@@ -84,16 +84,7 @@ client.session_parameters = client.service.setSessionParameters(
     viewSettings=view_settings
 )
 
-# Set the session parameters
-statistics_request_types = [
-    {
-        "type": "AgentState",
-        "statistics_request_columns": {
-            "values": {"data": ["Username", "Full Name", "State", "State Since"]}
-        },
-    }
-]
-
+# Create a list of statistics to get
 stats = [
     Five9Statistics(
         client,
