@@ -11,7 +11,7 @@
 
 ## Important
 
-The Five9 API operates on a single-threaded model, meaning that it can process only one request at a time. Consequently, all requests to fetch statistics or receive updates must be made in a sequential order. This approach ensures that each request is completed before the next one begins, maintaining the integrity of the session's workflow.
+The Five9 API operates on a single-threaded model for a given API user session, meaning that it can process only one request at a time. Consequently, all requests to fetch statistics or receive updates must be made in a sequential order. This approach ensures that each request is completed before the next one begins, maintaining the integrity of the session's workflow.
 
 
 For sessions that may track multiple types of statistics (e.g., AgentState, AgentStatistics, ACDStatus), design such that each statistics category maintains its own "previous timestamp" value for use in the statistics update request for that statistics type.
@@ -30,6 +30,30 @@ Per Page 31 of the Statistics Webservices API documentation, the following stati
 |OutboundCampaignStatistics|Statistics about outbound campaigns.|
 |InboundCampaignStatistics|Statistics about inbound campaigns.|
 |AutodialCampaignStatistics|Statistics about autodial campaigns.|
+
+# Statistics and Updated Statistics Responses
+
+## TODO 
+add sample responses for the udpated stats datatypes, note that the updated statistics will represent what statistics are added, updated, or deleted.  For example, this is the output for the ACDStatus changes:
+
+    {
+        'addedObjects': {
+            'values': None
+        },
+        'dataUpdate': [
+            {
+                'columnName': 'Calls In Queue',
+                'columnValue': '1',
+                'objectName': 'omni'
+            }
+        ],
+        'deletedObjects': {
+            'values': None
+        },
+        'lastTimestamp': 1712676966852,
+        'previousTimestamp': 1712676933324,
+        'type': 'ACDStatus'
+    }
 
 # setSession Notes
 
@@ -57,3 +81,5 @@ rollingPeriod is the time range used to calculate aggregate statistics in Outbou
 statisticsRange is the time interval for aggregate statistics.  Options are:
 
   - [RollingHour, CurrentDay, CurrentWeek, CurrentMonth, Lifetime, CurrentShift]
+
+## TODO - add an input handler to stop monitoring the stats without having to CTRL-C to escape
