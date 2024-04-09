@@ -72,43 +72,44 @@ class Five9Statistics:
 if __name__ == "__main__":
     client = Five9Client(sessiontype="statistics")
 
-view_settings = {
-    "forceLogoutSession": "yes",
-    # [Minutes5,Minutes10,Minutes15,Minutes30,Hour1,Hours2,Hours3,Today]
-    "rollingPeriod": "Today",
-    "shiftStart": "28800000",
-    "statisticsRange": "CurrentWeek",
-    "timeZone": "-25200000",
-}
-client.session_parameters = client.service.setSessionParameters(
-    viewSettings=view_settings
-)
-
-# Create a list of statistics to get
-stats = [
-    Five9Statistics(
-        client,
-        "AgentState",
-        statistics_request_columns={
-            "values": {"data": ["Username", "Full Name", "State", "State Since"]}
-        },
-    ),
-    Five9Statistics(
-        client,
-        "AgentStatistics"
-    ),
-    Five9Statistics(
-        client,
-        "ACDStatus"
+    # these default settings can be changed to suit your needs
+    view_settings = {
+        "forceLogoutSession": "yes",
+        # [Minutes5,Minutes10,Minutes15,Minutes30,Hour1,Hours2,Hours3,Today]
+        "rollingPeriod": "Today",
+        "shiftStart": "28800000",
+        "statisticsRange": "CurrentWeek",
+        "timeZone": "-25200000",
+    }
+    client.session_parameters = client.service.setSessionParameters(
+        viewSettings=view_settings
     )
-]
 
-# Get the initial statistics
-for stat in stats:
-    stat.get_statistics()
+    # Create a list of statistics to get
+    stats = [
+        Five9Statistics(
+            client,
+            "AgentState",
+            statistics_request_columns={
+                "values": {"data": ["Username", "Full Name", "State", "State Since"]}
+            },
+        ),
+        Five9Statistics(
+            client,
+            "AgentStatistics"
+        ),
+        Five9Statistics(
+            client,
+            "ACDStatus"
+        )
+    ]
 
-
-# Get the statistics updates
-while True:
+    # Get the initial statistics
     for stat in stats:
-        stat.get_statistics_update()
+        stat.get_statistics()
+
+
+    # Get the statistics updates
+    while True:
+        for stat in stats:
+            stat.get_statistics_update()
