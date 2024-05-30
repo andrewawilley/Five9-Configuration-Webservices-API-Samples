@@ -20,6 +20,18 @@ class Five9ClientCreationError(Exception):
 
 
 class Five9Client(zeep.Client):
+    """
+    A wrapper class for the Zeep client that provides additional functionality for interacting with the Five9 API.
+
+    Arguments:
+        five9username: The username for the Five9 account. (optional)
+        five9password: The password for the Five9 account. (optional)
+        account: The alias for the account to use. If not provided, the default account will be used. (optional)
+        sessiontype: The type of session to create. Can be 'admin' or 'statistics'. Default is 'admin'. (optional)
+        api_hostname: The hostname of the Five9 API. Default is 'api.five9.com'. (optional)
+        api_version: The version of the Five9 API to use. Default is 'v12'. (optional)
+    
+    """
     call_counters = None
     history = None
 
@@ -294,7 +306,7 @@ if __name__ == "__main__":
         required=False,
     )
     parser.add_argument(
-        "-h",
+        "-n",
         "--hostname",
         help="hostname to target, default is api.five9.com",
         required=False,
