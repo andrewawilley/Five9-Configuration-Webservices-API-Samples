@@ -2,6 +2,9 @@ import argparse
 import xml.etree.ElementTree as ET
 import json
 import csv
+
+from getpass import getpass
+
 from five9 import five9_session
 import os
 
@@ -38,15 +41,21 @@ if __name__ == '__main__':
     parser.add_argument('--output', type=str, default='private/ivr_skill_transfer_modules.csv', help='Output CSV file name')
     parser.add_argument('--verbose', action='store_true', help='Verbose output')
     parser.add_argument('--username', type=str, required=True, help='Five9 username')
-    parser.add_argument('--password', type=str, required=True, help='Five9 password')
+    parser.add_argument('--password', type=str, required=False, default=None, help='Five9 password')
 
     args = parser.parse_args()
+
+    password = args.password
+
+    if password is None:
+        password = getpass()
+
     output_file = args.output
 
     # Ensure the output directory exists
     os.makedirs(os.path.dirname(output_file), exist_ok=True)
 
-    client = five9_session.Five9Client(five9username=args.username, five9password=args.password)
+    client = five9_session.Five9Client(five9username=args.username, five9password=password)
 
     # Get the IVR script definitions
     ivrs = client.service.getIVRScripts()
