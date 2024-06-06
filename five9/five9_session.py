@@ -4,6 +4,8 @@ import code
 import argparse
 from lxml import etree
 
+from getpass import getpass
+
 # import os
 import requests
 import zeep
@@ -329,12 +331,17 @@ if __name__ == "__main__":
     username = args["username"] or None
     password = args["password"] or None
     account = args["account"] or None
+    version = args["version"] or "v12"
+
+    if username is not None and password is None:
+        password = getpass("Five9 Password: ")
+
     hostname = args["hostname"] or "api.five9.com"
     sessiontype = args["sessiontype"] or "admin"
     sessiontype = sessiontype.lower()
     get_objects = args["getobjects"] or None
     client = Five9Client(
-        five9username=username, five9password=password, account=account, sessiontype=sessiontype, api_hostname=hostname
+        five9username=username, five9password=password, account=account, sessiontype=sessiontype, api_hostname=hostname, api_version=version
     )
 
     if get_objects:

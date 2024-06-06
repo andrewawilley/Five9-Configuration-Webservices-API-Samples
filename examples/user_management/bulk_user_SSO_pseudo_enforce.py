@@ -1,9 +1,14 @@
+import getpass
 import time
+
+import argparse
 
 from tqdm import tqdm
 import zeep
 
 # from five9 import five9_session
+from five9.five9_session import Five9Client
+
 from five9.utils.general import get_random_password
 
 
@@ -79,12 +84,22 @@ def pseudo_enforce_SSO(
     with tqdm(total=total_users, desc="Updating users", mininterval=1) as pbar:
         for user in users_to_update[processed:]:
             try:
-                user.generalInfo.password = get_random_password()
-                user.generalInfo.canChangePassword = False
-                user.generalInfo.mustChangePassword = False
+                original_email = user.generalInfo.EMail.strip()
+
                 if not safe_mode:
+                    user.generalInfo.EMail = "test@mydomainnamehere.com"
+                    modified_user = client.service.modifyUser(user.generalInfo)
+                    
+                    user.generalInfo.password = get_random_password()
+                    user.generalInfo.canChangePassword = False
+                    user.generalInfo.mustChangePassword = False
+                    
                     modified_user = client.service.modifyUser(user.generalInfo)
                     time.sleep(0.3)
+
+                    modified_user.generalInfo.EMail = original_email
+                    modified_user = client.service.modifyUser(modified_user.generalInfo)
+
                     modified_users.append(modified_user)
                 updated += 1
 
@@ -100,3 +115,26 @@ def pseudo_enforce_SSO(
             )
 
     return modified_users, error_users
+
+
+if __name__ == "__main__":
+    #Parse command line arguments
+    parser = argparse.ArgumentParser(description='Update user accounts in the Five9 domain to pseudo-enforce Single Sign-On (SSO) compliance')
+    parser.add_argument('--output', type=str, default='private/ivr_skill_transfer_modules.csv', help='Output CSV file name')
+    parser.add_argument('--verbose', action='store_true', help='Verbose output')
+    parser.add_argument('--username', type=str, required=True, help='Five9 username')
+    parser.add_argument('--password', type=str, required=False, default=None, help='Five9 password')
+    parser.add_argument('--safe_mode', type=int, help='Dry run mode')
+
+    args = parser.parse_args()
+
+    password = args.password
+    safe_mode = args.safe_mode
+    safe_mode = bool(int(safe_mode))
+
+    if password is None:
+        password = getpass()
+
+    client = Five9Client(five9username=args.username, five9password=password)
+
+    modified_users, error_users = pseudo_enforce_SSO(client, safe_mode=safe_mode)

@@ -6,6 +6,9 @@ import zeep
 
 from five9 import five9_session
 
+import logging
+
+logging.basicConfig(level=logging.DEBUG)
 
 client = five9_session.Five9Client()
 
