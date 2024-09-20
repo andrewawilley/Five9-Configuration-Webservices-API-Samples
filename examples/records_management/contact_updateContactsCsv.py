@@ -13,7 +13,7 @@ DEFAULT_CRM_UPDATE_SETTINGS = {
     # 'failOnFieldParseError': False,
     # 'reportEmail': 'string',
     "crmAddMode": "ADD_NEW",
-    "crmUpdateMode": "UPDATE_FIRST",
+    "crmUpdateMode": "UPDATE_ALL",
     "separator": ",",
     "skipHeaderLine": True,
     "fieldsMapping": [
@@ -41,9 +41,7 @@ def update_contacts_from_csv(client, csv_file):
             print(response)
         except Exception as e:
             print(e)
-            
 
-        
         print(client.latest_envelopes)    
         return
             

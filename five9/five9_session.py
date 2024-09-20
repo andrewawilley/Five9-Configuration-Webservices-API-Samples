@@ -2,6 +2,7 @@ import base64
 import code
 
 import argparse
+import logging
 from lxml import etree
 
 from getpass import getpass
@@ -16,6 +17,14 @@ try:
 except ImportError:
     ACCOUNTS = {}
 
+
+HOST_ALIAS = {
+    'us': 'api.five9.com',
+    'ca': 'api.five9.ca',
+    'eu': 'api.five9.eu',
+    'frk': 'api.eu.five9.com',
+    'in': 'api.in.five9.com',
+}
 
 class Five9ClientCreationError(Exception):
     pass
@@ -40,16 +49,35 @@ class Five9Client(zeep.Client):
     def __init__(self, *args, **kwargs):
 
         sessiontype_details = {
-            "admin": ("wsadmin", ""),
+            "admin": ("wsadmin", "AdminWebService"),
             "statistics": ("wssupervisor", "SupervisorWebService"),
         }
 
         five9username = kwargs.get("five9username", None)
         five9password = kwargs.get("five9password", None)
         account = kwargs.get("account", None)
-        sessiontype = kwargs.get("sessiontype", "admin")
-        api_hostname = kwargs.get("api_hostname", "api.five9.com")
-        api_version = kwargs.get("api_version", "v12")
+        sessiontype = kwargs.get("sessiontype", None)
+        api_hostname = kwargs.get("api_hostname", None)
+        api_hostname_alias = kwargs.get("api_hostname_alias", None)
+        api_version = kwargs.get("api_version", None)
+        logging_level = kwargs.get("logging_level", "INFO")
+
+
+        # configure logging, use the logging level provided in the arguments and set default format to '%(asctime)s - %(levelname)s - %(message)s'
+        print(f"Logging level: {logging_level}")
+        logging.basicConfig(level=logging_level, format="%(asctime)s - %(levelname)s - %(message)s")
+
+
+        # check if the passed in argument values for the sessiontype, api_hostname, and api_version are None, and if they are, use the defaults
+        if sessiontype is None:
+            sessiontype = "admin"
+        if api_hostname is None:
+            api_hostname = "api.five9.com"
+        if api_version is None:
+            api_version = "v12"
+
+        if api_hostname_alias:
+            api_hostname = HOST_ALIAS.get(api_hostname_alias, "api.five9.com")
 
         self.history = HistoryPlugin()
 
@@ -57,6 +85,10 @@ class Five9Client(zeep.Client):
         api_definition_base = (
             "https://{api_hostname}/{sessiontype}/{api_version}/{sessiontype_path}?wsdl&user={five9username}"
         )
+
+
+        if five9username != None and five9password == None:
+            five9password = getpass("Five9 Password: ")
 
         if five9username == None and five9password == None:
             # Target the desired account using the alias in private.credentials
@@ -67,10 +99,13 @@ class Five9Client(zeep.Client):
                 or api_account.get("username" or None) == "apiUserUsername"
             ):
                 five9username = input("Five9 Username: ")
-                five9password = input("Five9 Password: ")
+                five9password = getpass("Five9 Password: ")
             else:
                 five9username = api_account.get("username", None)
                 five9password = api_account.get("password", None)
+
+        self.domain_name = None
+        self.domain_id = None
 
         # prepare the session with BasicAuth headers
         self.transport_session = requests.Session()
@@ -85,7 +120,7 @@ class Five9Client(zeep.Client):
             api_version=api_version,
             five9username=five9username,
         )
-        print(self.api_definition)
+        logging.info(f"API Definition: {self.api_definition}")
 
         # BREAKFIX - Get the directory of the current file and construct the WSDL file path
         # current_dir = os.path.dirname(os.path.realpath(__file__))
@@ -107,7 +142,10 @@ class Five9Client(zeep.Client):
             if sessiontype == "admin":
                 self.call_counters = self.service.getCallCountersState()
 
-            print(f"Client ready for {five9username}")
+            vcc_config = self.service.getVCCConfiguration()
+            self.domain_name = vcc_config["domainName"]
+            self.domain_id = vcc_config["domainId"]
+            logging.info(f"Client ready for {five9username}")
 
         # handle generic http errors
         except (
@@ -274,11 +312,11 @@ class Five9Client(zeep.Client):
         """
         Prints the available methods for the client.
         """
-        print("Available methods:")
+        logging.info("Available methods:")
         # create sorted list of methods from the service
         methods = sorted(self.service._operations.keys())
         for method in methods:
-            print(f"\t{method}")
+            logging.info(f"\t{method}")
 
 
 if __name__ == "__main__":
@@ -316,7 +354,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "-v",
         "--version",
-        help="api version to target, default is v12",
+        help="api version to target, default is v13",
         required=False,
     )
 
@@ -327,11 +365,20 @@ if __name__ == "__main__":
         help="preload common domain objects",
     )
 
+    # add an argument for logging level
+    parser.add_argument(
+        "-l",
+        "--loglevel",
+        help="Set the logging level",
+        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+        default="INFO",
+    )
+
     args = vars(parser.parse_args())
     username = args["username"] or None
     password = args["password"] or None
     account = args["account"] or None
-    version = args["version"] or "v12"
+    version = args["version"] or "v13"
 
     if username is not None and password is None:
         password = getpass("Five9 Password: ")
@@ -340,16 +387,18 @@ if __name__ == "__main__":
     sessiontype = args["sessiontype"] or "admin"
     sessiontype = sessiontype.lower()
     get_objects = args["getobjects"] or None
+
+    logging_level = args["loglevel"] or "INFO"
+
     client = Five9Client(
-        five9username=username, five9password=password, account=account, sessiontype=sessiontype, api_hostname=hostname, api_version=version
+        five9username=username, five9password=password, account=account, sessiontype=sessiontype, api_hostname=hostname, api_version=version, logging_level=logging_level
     )
 
     if get_objects:
         users = client.service.getUsersInfo()
-        print("\nUsers loaded as 'users'")
+        logging.info("\nUsers loaded as 'users'")
         campaigns = client.service.getCampaigns()
-        print("Campaigns loaded as 'campaigns'")
+        logging.info("Campaigns loaded as 'campaigns'")
         skills = client.service.getSkills()
-        print("Skills loaded as 'skills'\n")
-    print()
+        logging.info("Skills loaded as 'skills'\n")
     code.interact(local=locals())
