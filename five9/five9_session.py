@@ -64,7 +64,6 @@ class Five9Client(zeep.Client):
 
 
         # configure logging, use the logging level provided in the arguments and set default format to '%(asctime)s - %(levelname)s - %(message)s'
-        print(f"Logging level: {logging_level}")
         logging.basicConfig(level=logging_level, format="%(asctime)s - %(levelname)s - %(message)s")
 
 
@@ -316,7 +315,7 @@ class Five9Client(zeep.Client):
         # create sorted list of methods from the service
         methods = sorted(self.service._operations.keys())
         for method in methods:
-            logging.info(f"\t{method}")
+            print(f"\t{method}")
 
 
 if __name__ == "__main__":

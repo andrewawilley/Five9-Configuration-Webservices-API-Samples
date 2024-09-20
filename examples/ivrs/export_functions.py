@@ -82,7 +82,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     logging.info(args)
-    five9Username = args.username
+    five9Username = args.username or input("Enter your Five9 username: ")
     five9Password = args.password
     five9Host = args.hostalias.lower()
 
