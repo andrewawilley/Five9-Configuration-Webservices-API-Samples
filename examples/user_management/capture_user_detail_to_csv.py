@@ -1,8 +1,17 @@
 import argparse
 import csv
 from datetime import datetime
+import logging
+import time
+import os
+
+import tqdm
+
 
 from five9 import five9_session
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
 
 
 def capture_user_details(
@@ -10,6 +19,8 @@ def capture_user_details(
     target_generalInfo_fields: list = ["userName", "EMail", "fullName", "active"],
     target_permissions: dict = {},
     target_filename: str = "users.csv",
+    target_users: list = [],
+    limit_to_target_users: bool = False,
 ):
     """Retrieve user details from a Five9 client object and save them to a CSV file.
 
@@ -23,8 +34,38 @@ def capture_user_details(
         None: This function does not return anything, but it writes the user details to a CSV file.
     """
 
-    # Get the user information from the Five9 API
-    users = client.service.getUsersInfo()
+    if limit_to_target_users is False:
+        logging.info(f"Limiting user details to the following users: {target_users}")
+        # Get the user information from the Five9 API
+        users = client.service.getUsersInfo()
+
+    else:  # Filter the users list to only include the target users
+        logging.info(f"Limiting user details capture to targeted users")
+        # Loop through the target_users to get information from the Five9 API individually, use tqdm to show a progress bar
+        users = []
+        for user in tqdm.tqdm(target_users):
+            user_info = client.service.getUserInfo(user)
+            users.append(user_info)
+            time.sleep(0.3)
+
+    logging.info(f"Capturing details for {len(users)} users")
+
+    # if the target_permissions dictionary is empty, loop through all the users and get all the permission names
+    if not target_permissions:
+        logging.info(
+            "No target permissions specified. Capturing all permissions for each user."
+        )
+        for user in users:
+            for role_key in user.roles:
+                if user.roles[role_key] is not None and role_key == "agent":
+                    for perm in user.roles[role_key]["permissions"]:
+                        if role_key not in target_permissions:
+                            target_permissions[role_key] = []
+                        if perm.type not in target_permissions[role_key]:
+                            target_permissions[role_key].append(perm.type)
+
+    # Print the target permissions
+    logging.info(f"Target permissions: {target_permissions}")
 
     # Create an empty list to store the agent information
     ap = []
@@ -35,6 +76,9 @@ def capture_user_details(
         for attribute in target_generalInfo_fields:
             user_output[attribute] = user.generalInfo[attribute]
 
+        # for role_key in target_permissions.keys():
+        #     for permission in target_permissions[role_key]:
+
         for role_key in target_permissions.keys():
             if user.roles[role_key] is not None:
                 for perm in user.roles[role_key]["permissions"]:
@@ -43,6 +87,13 @@ def capture_user_details(
 
         # Append the agent dictionary to the ap list
         ap.append(user_output)
+
+    # check that the target path exists, if not create it
+    if not os.path.exists(os.path.dirname(target_filename)):
+        os.makedirs(os.path.dirname(target_filename))
+        logging.info(f"Created directory: {os.path.dirname(target_filename)}")
+    else:
+        logging.info(f"Directory already exists: {os.path.dirname(target_filename)}")
 
     # Write the list of agent information to a CSV file
     with open(target_filename, "w", newline="") as file:
@@ -95,15 +146,19 @@ if __name__ == "__main__":
     )
 
     # Specify the general user fields to include in the CSV file
-    target_generalInfo_fields = ["firstName", "lastName", "EMail", "active"]
+    target_generalInfo_fields = ["userName", "firstName", "lastName", "EMail", "active"]
 
     # Specify any role keys and permission types to include in the CSV file
     # target_permissions = {"agent": ["ManageAvailabilityBySkill", "CallForwarding"]}
-    target_permissions = {"agent": ["ManageAvailabilityBySkill"]}
+    # target_permissions = {"agent": ["ManageAvailabilityBySkill"]}
+    target_permissions = {}
+    target_users = []
 
     capture_user_details(
         client,
         target_permissions=target_permissions,
         target_generalInfo_fields=target_generalInfo_fields,
         target_filename=target_filename,
+        target_users=target_users,
+        limit_to_target_users=True,
     )

@@ -101,8 +101,12 @@ class Five9DomainConfig:
         """Method to get the VCC Configuration for the domain and create the domain snapshot folder"""
 
         self.vccConfig = self.client.service.getVCCConfiguration()
+
+        # Use current working directory instead of hardcoded path
+        current_working_directory = os.getcwd()
+
         self.domain_path = os.path.join(
-            os.path.dirname(__file__),
+            current_working_directory,  # Change from os.path.dirname(__file__)
             "domain_snapshots",
             f"{self.vccConfig.domainName}",
         )
@@ -141,7 +145,8 @@ class Five9DomainConfig:
 
         print(f"\nDomain snapshot initialized for:\n{self.vccConfig.domainName}\n")
 
-    # TODO - Add logic to check if repo exists and if so, pull latest, else create new repo
+
+        # TODO - Add logic to check if repo exists and if so, pull latest, else create new repo
 
     def write_object_to_target_path(
         self,

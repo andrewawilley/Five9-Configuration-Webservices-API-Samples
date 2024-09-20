@@ -64,6 +64,7 @@ class Five9Statistics:
             logging.info(
                 f"{self.statistics_request_type} UNCHANGED since {self.statistics_timestamp}"
             )
+            logging.info(self.statistics)
             self.last_checked_timestamp = time.time()
 
 
@@ -87,20 +88,20 @@ if __name__ == "__main__":
 
     # Create a list of statistics to get
     stats = [
+        # Five9Statistics(
+        #     client,
+        #     "AgentState",
+        #     statistics_request_columns={
+        #         "values": {"data": ["Username", "Full Name", "State", "State Since"]}
+        #     },
+        # ),
+        # Five9Statistics(
+        #     client,
+        #     "AgentStatistics"
+        # ),
         Five9Statistics(
             client,
-            "AgentState",
-            statistics_request_columns={
-                "values": {"data": ["Username", "Full Name", "State", "State Since"]}
-            },
-        ),
-        Five9Statistics(
-            client,
-            "AgentStatistics"
-        ),
-        Five9Statistics(
-            client,
-            "ACDStatus"
+            "InboundCampaignStatistics"
         )
     ]
 
