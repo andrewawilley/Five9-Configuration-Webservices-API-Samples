@@ -2,7 +2,7 @@ import csv
 import time
 import zeep
 from tqdm import tqdm
-import five9_session
+from five9 import five9_session
 
 
 def update_user_federation_ids(csv_path, client=None):
