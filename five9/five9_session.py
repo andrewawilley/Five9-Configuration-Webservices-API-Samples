@@ -73,7 +73,8 @@ class Five9Client(zeep.Client):
         if api_hostname is None:
             api_hostname = "api.five9.com"
         if api_version is None:
-            api_version = "v12"
+            api_version = "v13"
+            self.api_version = api_version
 
         if api_hostname_alias:
             api_hostname = HOST_ALIAS.get(api_hostname_alias, "api.five9.com")
@@ -142,8 +143,15 @@ class Five9Client(zeep.Client):
                 self.call_counters = self.service.getCallCountersState()
 
             vcc_config = self.service.getVCCConfiguration()
-            self.domain_name = vcc_config["domainName"]
-            self.domain_id = vcc_config["domainId"]
+            logging.info(f"API VERSION: {api_version}")
+            if api_version != "v4":
+                logging.info("New version")
+                self.domain_name = vcc_config["domainName"]
+                self.domain_id = vcc_config["domainId"]
+            else:
+                self.domain_name = "HARDCODED"
+                self.domain_id = "HARDCODED"
+
             logging.info(f"Client ready for {five9username}")
 
         # handle generic http errors

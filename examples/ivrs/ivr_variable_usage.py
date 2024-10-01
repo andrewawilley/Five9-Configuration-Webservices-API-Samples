@@ -1,61 +1,61 @@
-import collections
-import json
-import re
+import os
+import csv
+import argparse
+from five9.utils.ivr_utils import ivr_variable_usage
+from five9 import five9_session
 
-def ivr_variable_usage(ivrs, verbose=False):
-    """
-    Analyzes a list of IVR (Interactive Voice Response) objects to identify the usage of script variables within them.
+def write_ordered_dict_to_csv(ordered_dict, filename):
+    with open(filename, mode='w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(["Variable Name", "IVR Script Name"])  # Write header
+        
+        # Write each variable and its associated script name(s)
+        for variable_name, script_names in ordered_dict.items():
+            for script_name in script_names:
+                writer.writerow([variable_name, script_name])
 
-    Args:
-    ivrs (list): A list of IVR objects (should be obtained from the getIvrScripts method).
-    verbose (bool): If True, the function prints the dictionary of variables and their corresponding IVRs in JSON format. Defaults to False.
+if __name__ == "__main__":
+    # Set the folder path to the current directory where the script is running
+    current_dir = os.getcwd()
+    
+    # Create the "private" directory path
+    private_dir = os.path.join(current_dir, "private")
+    
+    # Ensure the "private" folder exists
+    os.makedirs(private_dir, exist_ok=True)
 
-    The function scans through the 'xmlDefinition' of each IVR object looking for script variables. It ignores any IVR objects with "EXAMPLE" in their name. Each variable is then cataloged along with the IVR names where it appears.
+    parser = argparse.ArgumentParser(description='Export IVR functions from Five9 IVR scripts')
 
-    Returns:
-    OrderedDict: A dictionary where keys are script variable names and values are lists of IVR names where these variables are used. The dictionary is sorted alphabetically by the variable names.
-    """
+    # Optional arguments using '--'
+    parser.add_argument('--username', type=str, help='Five9 username')
+    parser.add_argument('--password', type=str, help='Five9 password')
+    parser.add_argument('--hostalias', type=str, default='us', help='Five9 host alias (us, ca, eu, frk, in)')
+    parser.add_argument('--verbose', action='store_false', help='Print verbose output')
+    parser.add_argument('--outputfile', type=str, help='Output file for variable usage')
 
-    # Initialize an empty dictionary to store the script variables and the IVRs where they appear
-    ivr_variables = {}
+    args = parser.parse_args()
+    five9Username = args.username or input("Enter your Five9 username: ")
+    five9Password = args.password
+    five9Host = args.hostalias.lower()
 
-    # Compile a regular expression to find script variables in the xmlDefinition attribute
-    script_variable_pattern = re.compile(
-        r"(?<=<variableName>)(.*?)(?=<\/variableName>)"
+    verbose = args.verbose
+    outputfile = args.outputfile or "ivr_variable_usage.csv"
+
+    # Ensure the file is saved inside the "private" folder
+    outputfile_path = os.path.join(private_dir, outputfile)
+
+    # Initialize the Five9 client
+    client = five9_session.Five9Client(
+        five9username=five9Username,
+        five9password=five9Password,
+        api_hostname_alias=five9Host
     )
 
-    # Iterate over the IVR objects
-    for ivr in ivrs:
-        # Skip IVRs with "EXAMPLE" in their name
-        if "EXAMPLE" in ivr.name:
-            continue
+    ivrs = client.service.getIVRScripts()
 
-        # Find all instances of script variables in the xmlDefinition attribute
-        script_variables = script_variable_pattern.finditer(ivr.xmlDefinition)
+    ivr_variables = ivr_variable_usage(ivrs, verbose=True)
 
-        # Iterate over the script variables
-        for var in script_variables:
-            # Extract the variable name
-            b = var.span()[0]
-            e = var.span()[1]
-            variable = ivr.xmlDefinition[b:e]
-            # Split the variable name into parts at the period
-            variable_parts = variable.split(".")
+    # Write the variable usage to a CSV file
+    write_ordered_dict_to_csv(ivr_variables, outputfile_path)
 
-            # If the variable has more than one part, add it to the ivr_variables dictionary
-            if len(variable_parts) > 1:
-                if ivr_variables.get(variable, None) == None:
-                    ivr_variables[variable] = []
-                if ivr.name not in ivr_variables[variable]:
-                    ivr_variables[variable].append(ivr.name)
-
-    # Sort the ivr_variables dictionary
-    ivr_variables = collections.OrderedDict(sorted(ivr_variables.items()))
-
-    # If verbose is True, print the ivr_variables dictionary as a JSON object
-    if verbose == True:
-        j = json.dumps(ivr_variables, indent=4)
-        print(j)
-
-    # Return the ivr_variables dictionary
-    return ivr_variables
+    print(f"File saved to: {outputfile_path}")
