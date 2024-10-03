@@ -175,6 +175,13 @@ if __name__ == "__main__":
     )
     args = vars(parser.parse_args())
 
+    parser.add_argument(
+        "--hostalias",
+        type=str,
+        default="us",
+        help="Five9 host alias (us, ca, eu, frk, in)",
+    )
+
     five9_username = args["username"] or None
     five9_password = args["password"] or None
     five9_account = args["account"] or None
@@ -192,6 +199,7 @@ if __name__ == "__main__":
         five9username=five9_username,
         five9password=five9_password,
         account=five9_account,
+        api_hostname_alias=args["hostalias"],
     )
 
     update_user_details(

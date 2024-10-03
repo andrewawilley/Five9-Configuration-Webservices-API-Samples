@@ -32,6 +32,13 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
+        "--hostalias",
+        type=str,
+        default="us",
+        help="Five9 host alias (us, ca, eu, frk, in)",
+    )
+
+    parser.add_argument(
         "--verbose",
         metavar="Stored credential alias",
         type=bool,
@@ -45,6 +52,7 @@ if __name__ == "__main__":
         username=args.username,
         password=args.password,
         account=args.account_alias,
+        api_hostname_alias=args.hostalias,
         methods=["getCampaignProfiles"],
     )
     domain.demystify_campaign_profile_filters(verbose=args.verbose or False)

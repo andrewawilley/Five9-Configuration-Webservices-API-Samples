@@ -42,9 +42,8 @@ def update_contacts_from_csv(client, csv_file):
         except Exception as e:
             print(e)
 
-        print(client.latest_envelopes)    
+        print(client.latest_envelopes)
         return
-            
 
 
 # if main, then run the script
@@ -71,13 +70,22 @@ if __name__ == "__main__":
         required=False,
     )
 
+    parser.add_argument(
+        "--hostalias",
+        type=str,
+        default="us",
+        help="Five9 host alias (us, ca, eu, frk, in)",
+    )
+
     args = parser.parse_args()
     five9_username = args.username or None
     five9_password = args.password or None
 
     # Get the Five9 API client
     client = five9_session.Five9Client(
-        five9username=five9_username, five9password=five9_password
+        five9username=five9_username,
+        five9password=five9_password,
+        api_hostname_alias=args.hostalias,
     )
 
     # Update the contacts from the CSV file

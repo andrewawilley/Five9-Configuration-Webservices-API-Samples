@@ -6,12 +6,11 @@ from five9 import five9_session
 
 DEFAULT_CRM_UPDATE_SETTINGS = {
     "allowDataCleanup": True,
-    'failOnFieldParseError': True,
+    "failOnFieldParseError": True,
     # 'callbackAuthProfileName': 'string',
     # 'callbackFormat': 'string',
     # 'callbackUrl': 'string',
     # 'countryCode': 'string',
-
     # 'reportEmail': 'string',
     "crmUpdateMode": "UPDATE_FIRST",
     "crmAddMode": "DONT_ADD",
@@ -70,6 +69,13 @@ if __name__ == "__main__":
         required=False,
     )
 
+    parser.add_argument(
+        "--hostalias",
+        type=str,
+        default="us",
+        help="Five9 host alias (us, ca, eu, frk, in)",
+    )
+
     args = parser.parse_args()
     five9_username = args.username or None
     five9_password = args.password or None
@@ -80,7 +86,7 @@ if __name__ == "__main__":
 
     # Get the Five9 API client
     client = five9_session.Five9Client(
-        five9username=five9_username, five9password=five9_password
+        five9username=five9_username, five9password=five9_password, api_hostname_alias=args.hostalias
     )
 
     # Update the contacts from the CSV file

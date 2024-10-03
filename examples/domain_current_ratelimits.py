@@ -39,12 +39,20 @@ if __name__ == "__main__":
         help="verbose level set true to see all the output",
     )
 
+    parser.add_argument(
+        "--hostalias",
+        type=str,
+        default="us",
+        help="Five9 host alias (us, ca, eu, frk, in)",
+    )
+
     args = parser.parse_args()
 
     client = five9_session.Five9Client(
         five9username=args.username,
         five9password=args.password,
         account=args.account_alias,
+        api_hostname_alias=args.hostalias,
     )
 
     print(client.current_api_useage_formatted)

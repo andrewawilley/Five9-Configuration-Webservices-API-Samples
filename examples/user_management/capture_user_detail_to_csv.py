@@ -127,6 +127,14 @@ if __name__ == "__main__":
     parser.add_argument(
         "-fn", "--filename", help="Target Five9 Report Folder", required=False
     )
+
+    parser.add_argument(
+        "--hostalias",
+        type=str,
+        default="us",
+        help="Five9 host alias (us, ca, eu, frk, in)",
+    )
+
     args = vars(parser.parse_args())
 
     five9_username = args["username"] or None
@@ -143,6 +151,7 @@ if __name__ == "__main__":
         five9username=five9_username,
         five9password=five9_password,
         account=five9_account,
+        api_hostname_alias=args["hostalias"],
     )
 
     # Specify the general user fields to include in the CSV file

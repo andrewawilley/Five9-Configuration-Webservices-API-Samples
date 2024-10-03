@@ -37,7 +37,7 @@ def pseudo_enforce_SSO(
     exclude_blank_federationId=True,
     safe_mode=True,
     simulated_delay=0,
-    temp_email="tempemail@temp.com"
+    temp_email="tempemail@temp.com",
 ):
     """
     Updates user accounts in the Five9 domain to pseudo-enforce Single Sign-On (SSO) compliance.
@@ -70,7 +70,6 @@ def pseudo_enforce_SSO(
         If an error occurs during the update process.
     """
 
-
     print("Fetching users from Five9...")
     user_fetch_start_time = time.time()
     users = client.service.getUsersInfo()
@@ -81,7 +80,10 @@ def pseudo_enforce_SSO(
     missing_users = []
 
     for user in users:
-        if usernames_to_update is not None and user.generalInfo.userName in usernames_to_update:
+        if (
+            usernames_to_update is not None
+            and user.generalInfo.userName in usernames_to_update
+        ):
             users_to_update.append(user)
             continue
 
@@ -131,7 +133,7 @@ def pseudo_enforce_SSO(
                         "userName": modified_user.generalInfo.userName,
                         "federationId": modified_user.generalInfo.federationId,
                         "email": modified_user.generalInfo.EMail,
-                        "userProfilename": modified_user.generalInfo.userProfileName
+                        "userProfilename": modified_user.generalInfo.userProfileName,
                     }
                     modified_users.append(modified_user_data)
                 updated += 1
@@ -201,6 +203,13 @@ if __name__ == "__main__":
         help="Simulated delay in seconds between requests (default: 0)",
     )
 
+    parser.add_argument(
+        "--hostalias",
+        type=str,
+        default="us",
+        help="Five9 host alias (us, ca, eu, frk, in)",
+    )
+
     args = parser.parse_args()
 
     # Set logging level
@@ -214,13 +223,16 @@ if __name__ == "__main__":
     if password is None:
         password = getpass()
 
-    client = Five9Client(five9username=args.username, five9password=password)
-
+    client = Five9Client(
+        five9username=args.username,
+        five9password=password,
+        api_hostname_alias=args.hostalias,
+    )
 
     modified_users, error_users = pseudo_enforce_SSO(
         client,
         exclude_blank_federationId=args.exclude_blank_federationId,
         temp_email=temp_email,
         safe_mode=safe_mode,
-        simulated_delay=args.simulated_delay
+        simulated_delay=args.simulated_delay,
     )

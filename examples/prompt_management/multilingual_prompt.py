@@ -4,6 +4,7 @@ import base64
 
 from five9 import five9_session
 
+
 # function to take a wav file and convert to base64
 def convert_audio_to_base64(filename):
     with open(filename, "rb") as audio_file:
@@ -12,9 +13,7 @@ def convert_audio_to_base64(filename):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="uploads prompt audio"
-    )
+    parser = argparse.ArgumentParser(description="uploads prompt audio")
 
     parser.add_argument(
         "--filename",
@@ -24,7 +23,12 @@ if __name__ == "__main__":
         help="filename of the prompt audio",
     )
 
-
+    parser.add_argument(
+        "--hostalias",
+        type=str,
+        default="us",
+        help="Five9 host alias (us, ca, eu, frk, in)",
+    )
     parser.add_argument(
         "--language_code",
         metavar="language_code",
@@ -40,17 +44,9 @@ if __name__ == "__main__":
     language_code = args["language_code"] or "en-US"
 
     encoded_audio = convert_audio_to_base64(filename)
-    
 
-    client = five9_session.Five9Client()
+    client = five9_session.Five9Client(api_hostname_alias=args.hostalias)
 
-    prompt = {
-        "name": prompt_name,
-        "languages": [
-            language_code
-        ]
-    }
+    prompt = {"name": prompt_name, "languages": [language_code]}
 
     r = client.service.modifyPromptWavInline(prompt=prompt, wavFile=encoded_audio)
-
-
