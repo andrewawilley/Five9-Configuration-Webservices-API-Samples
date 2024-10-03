@@ -48,6 +48,7 @@ class Five9DomainConfig:
         username=None,
         password=None,
         account=None,
+        hostalias="us",
         sync_target_domain=None,
         methods=METHODS,
     ):
@@ -67,7 +68,7 @@ class Five9DomainConfig:
                 f"\nNo client provided, creating a new client for {username}{account}"
             )
             self.client = five9_session.Five9Client(
-                five9username=username, five9password=password, account=account
+                five9username=username, five9password=password, account=account, hostalias=hostalias
             )
         else:
             self.client = client

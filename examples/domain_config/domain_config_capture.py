@@ -32,6 +32,8 @@ if __name__ == "__main__":
         help="Alias for a stored credential object in private/credentials.py",
     )
 
+    parser.add_argument('--hostalias', type=str, default='us', help='Five9 host alias (us, ca, eu, frk, in)')
+
     args = parser.parse_args()
 
     password = args.password
@@ -40,7 +42,7 @@ if __name__ == "__main__":
         password = getpass("Password: ")
 
     domain = domain_capture.Five9DomainConfig(
-        username=args.username, password=password, account=args.account_alias
+        username=args.username, password=password, account=args.account_alias, hostalias=args.hostalias
     )
 
     domain.get_domain_objects()
