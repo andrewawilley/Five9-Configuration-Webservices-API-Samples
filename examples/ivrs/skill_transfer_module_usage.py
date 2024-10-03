@@ -41,6 +41,7 @@ if __name__ == '__main__':
     parser.add_argument('--output', type=str, default='private/ivr_skill_transfer_modules.csv', help='Output CSV file name')
     parser.add_argument('--verbose', action='store_true', help='Verbose output')
     parser.add_argument('--username', type=str, required=True, help='Five9 username')
+    parser.add_argument('--hostalias', type=str, default='us', help='Five9 host alias (us, ca, eu, frk, in)')
     parser.add_argument('--password', type=str, required=False, default=None, help='Five9 password')
 
     args = parser.parse_args()
