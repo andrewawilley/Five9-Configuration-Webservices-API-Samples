@@ -48,7 +48,7 @@ class Five9DomainConfig:
         username=None,
         password=None,
         account=None,
-        hostalias=None,
+        api_hostname_alias=None,
         sync_target_domain=None,
         methods=METHODS,
     ):
@@ -63,14 +63,14 @@ class Five9DomainConfig:
         self.vccConfig = None
         self.repo = None
 
-        print("hostalias", hostalias)
+        print("api_hostname_alias", api_hostname_alias)
 
         if client is None:
             print(
                 f"\nNo client provided, creating a new client for {username}{account}"
             )
             self.client = five9_session.Five9Client(
-                five9username=username, five9password=password, account=account, api_hostname_alias=hostalias
+                five9username=username, five9password=password, account=account, api_hostname_alias=api_hostname_alias
             )
         else:
             self.client = client

@@ -1,13 +1,11 @@
 import os
-
 import argparse
 import csv
-
 import logging
-
+import jsbeautifier
+import difflib  # Import difflib for comparison
 from five9 import five9_session
 from five9.utils.ivr_utils import extract_jsfunctions_from_ivr
-
 
 if __name__ == "__main__":
 
@@ -15,7 +13,7 @@ if __name__ == "__main__":
     ivr_folder_path = os.getcwd()
 
     parser = argparse.ArgumentParser(
-        description="Export IVR functions from Five9 IVR scripts"
+        description="Export IVR functions from Five9 IVR scripts and detect differences"
     )
 
     # Optional arguments using '--'
@@ -43,39 +41,71 @@ if __name__ == "__main__":
 
     ivrs = client.service.getIVRScripts()
 
-    all_functions = []
+    all_functions = {}
+    beautifier_options = jsbeautifier.default_options()
+    beautifier_options.indent_size = 4  # Set indentation level
 
-    for script in ivrs:
-        scriptxml = script["xmlDefinition"]
-        functions = extract_jsfunctions_from_ivr(scriptxml)
+    # Subfolder for storing files
+    subfolder = f"private/{client.domain_name}/ivr_function_exports"
+    if not os.path.exists(subfolder):
+        os.makedirs(subfolder)
 
-        if functions:
-            # Prepare the new filename
-            new_filename = f"{os.path.splitext(script['name'])[0]}_functions.js"
+    # Store differences in functions
+    differences_log = os.path.join(subfolder, "function_differences.diff")
 
-            subfolder = f"private/{client.domain_name}/ivr_function_exports"
-            if not os.path.exists(subfolder):
-                os.makedirs(subfolder)
+    with open(differences_log, "w") as diff_file:
+        for script in ivrs:
+            scriptxml = script["xmlDefinition"]
+            functions = extract_jsfunctions_from_ivr(scriptxml)
 
-            # Collect functions and script names for CSV
-            for function in functions:
-                all_functions.append(
-                    {"script_name": script["name"], "function_name": function["name"]}
-                )
+            if functions:
+                # Prepare new filename for the current script's JS functions
+                new_filename = f"{os.path.splitext(script['name'])[0]}_functions.js"
 
-            # Save the functions to a new JS file
-            with open(
-                os.path.join(subfolder, f'{script["name"]}.js'), "w", encoding="utf-8"
-            ) as new_file:
-                functions_str = [function["js"] for function in functions]
-                new_file.write("\n".join(functions_str))
-            logging.info(f"Extracted functions saved to: {new_filename}")
-        else:
-            logging.info(f"No functions found in: {script['name']}")
+                with open(
+                    os.path.join(subfolder, f'{script["name"]}.js'), "w", encoding="utf-8"
+                ) as new_file:
+                    functions_str = [function["js"] for function in functions]
+                    formatted_js = [jsbeautifier.beautify(f, beautifier_options) for f in functions_str]
+                    new_file.write("\n".join(formatted_js))
+
+                for function in functions:
+                    function_name = function["name"]
+                    function_js = jsbeautifier.beautify(function["js"], beautifier_options)
+
+                    # Check if the function already exists in another script
+                    if function_name in all_functions:
+                        existing_function = all_functions[function_name]
+                        existing_js = existing_function["js"]
+
+                        if existing_js != function_js:
+                            # Log the difference
+                            diff_file.write(f"Difference found in function '{function_name}'\n")
+                            diff_file.write(f"Script 1: {existing_function['script_name']}\n")
+                            diff_file.write(f"Script 2: {script['name']}\n")
+
+                            # Compare the two versions of the function
+                            diff = difflib.unified_diff(
+                                existing_js.splitlines(), function_js.splitlines(), lineterm=""
+                            )
+                            diff_file.write("\n".join(list(diff)) + "\n\n")
+                            
+                            logging.info(f"Difference found in function '{function_name}' between scripts.")
+
+                    # Store the function if it's new or after comparison
+                    all_functions[function_name] = {
+                        "script_name": script["name"],
+                        "js": function_js,
+                    }
+
+            else:
+                logging.info(f"No functions found in: {script['name']}")
+
+    logging.info(f"Differences log saved to: {differences_log}")
 
     # Sort the functions alphabetically by script name, then by function name
     all_functions_sorted = sorted(
-        all_functions, key=lambda x: (x["script_name"], x["function_name"])
+        all_functions.items(), key=lambda x: (x[1]["script_name"], x[0])
     )
 
     # Write the sorted functions to the CSV file
@@ -90,7 +120,9 @@ if __name__ == "__main__":
             writer.writeheader()
 
         # Write the rows of sorted data
-        for function_data in all_functions_sorted:
-            writer.writerow(function_data)
+        for function_name, function_data in all_functions_sorted:
+            writer.writerow(
+                {"script_name": function_data["script_name"], "function_name": function_name}
+            )
 
     logging.info(f"CSV summary of functions saved to: {csv_file_path}")
