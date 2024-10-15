@@ -16,7 +16,7 @@ def append_to_csv(filename, data):
     """
     Appends data to a CSV file.
 
-    Parameters:cd
+    Parameters:
     filename (str): The name of the CSV file.
     data (dict): A dictionary containing the data.
     fieldnames (list): A list of field names for the CSV file.
@@ -28,6 +28,31 @@ def append_to_csv(filename, data):
         if not file_exists:
             writer.writeheader()
         writer.writerow(data)
+
+
+def read_usernames_from_csv(csv_file):
+    """
+    Reads a CSV file and extracts the list of usernames from the 'userName' column.
+
+    Parameters:
+    csv_file (str): The path to the CSV file containing user data.
+
+    Returns:
+    list: A list of usernames.
+    """
+    usernames = []
+    try:
+        with open(csv_file, mode="r", newline="") as file:
+            reader = csv.DictReader(file)
+            for row in reader:
+                if "userName" in row:
+                    usernames.append(row["userName"])
+    except FileNotFoundError:
+        logging.error(f"File {csv_file} not found.")
+    except Exception as e:
+        logging.error(f"Error reading the CSV file: {e}")
+    
+    return usernames
 
 
 def pseudo_enforce_SSO(
@@ -48,17 +73,15 @@ def pseudo_enforce_SSO(
     Parameters:
     client: Five9 Client object
         The client used to interact with the Five9 domain.
-    users_to_update (optional): list
-        A list of user objects (usersInfo datatype) to update.
-        If None, fetches all users from the Five9 domain.
+    usernames_to_update (optional): list
+        A list of usernames to update.
     roles_to_exclude (optional): list of str
         Roles to be excluded from the update. Default is ["admin", "supervisor"].
-        This parameter is considered only if `users_to_update` is None.
     safe_mode (optional): bool
         If True, performs updates without modifying the user data on the server.
         Useful for dry runs. Default is True.
     temp_email (optional): str
-        Temporary email address to set during the update. Default is "five9-password-reset@chime.com".
+        Temporary email address to set during the update. Default is "five9-password-reset@somecompany.com".
 
     Returns:
     tuple: (modified_users, error_users)
@@ -74,7 +97,8 @@ def pseudo_enforce_SSO(
     user_fetch_start_time = time.time()
     users = client.service.getUsersInfo()
     user_fetch_end_time = time.time()
-    logging.info(f"Fetched {len(users)} users from Five9.")
+    user_fetch_time = user_fetch_end_time - user_fetch_start_time
+    logging.info(f"Fetched {len(users)} users from Five9 in {user_fetch_time:.2f} seconds.")
 
     users_to_update = []
     missing_users = []
@@ -152,7 +176,7 @@ def pseudo_enforce_SSO(
                     "federationId": user.generalInfo.federationId,
                     "error": str(e),
                 }
-                append_to_csv("{filename_prefix}error_users.csv", error_user_data)
+                append_to_csv(f"{filename_prefix}error_users.csv", error_user_data)
                 error_users.append(error_user_data)
                 errors += 1
                 print(f"Error updating {user.generalInfo.userName}: {e}")
@@ -187,7 +211,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--temp_email",
         type=str,
-        default="five9-password-reset@chime.com",
+        default="five9-password-reset@somecompany.com",
         help="Temporary email address",
     )
     parser.add_argument(
@@ -209,6 +233,12 @@ if __name__ == "__main__":
         default="us",
         help="Five9 host alias (us, ca, eu, frk, in)",
     )
+    
+    parser.add_argument(
+        "--csv_file",
+        type=str,
+        help="Path to the CSV file containing the list of users to update"
+    )
 
     args = parser.parse_args()
 
@@ -229,8 +259,13 @@ if __name__ == "__main__":
         api_hostname_alias=args.hostalias,
     )
 
+    usernames_to_update = None
+    if args.csv_file:
+        usernames_to_update = read_usernames_from_csv(args.csv_file)
+
     modified_users, error_users = pseudo_enforce_SSO(
         client,
+        usernames_to_update=usernames_to_update,
         exclude_blank_federationId=args.exclude_blank_federationId,
         temp_email=temp_email,
         safe_mode=safe_mode,
