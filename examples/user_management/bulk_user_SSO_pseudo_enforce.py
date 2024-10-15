@@ -1,15 +1,16 @@
-from getpass import getpass
-import time
-import csv
 import argparse
-
+import csv
+import logging
 import os
+import re
+import time
+from getpass import getpass
+
 from tqdm import tqdm
 import zeep
+
 from five9.five9_session import Five9Client
 from five9.utils.general import get_random_password
-
-import logging
 
 
 def append_to_csv(filename, data):
@@ -30,34 +31,70 @@ def append_to_csv(filename, data):
         writer.writerow(data)
 
 
-def read_usernames_from_csv(csv_file):
+def read_usernames_from_csv(csv_file, username_column_header="userName"):
     """
-    Reads a CSV file and extracts the list of usernames from the 'userName' column.
+    Reads a CSV file and extracts the list of usernames from the specified column.
 
     Parameters:
     csv_file (str): The path to the CSV file containing user data.
+    username_column_header (str): The column header to extract usernames from. Default is 'userName'.
 
     Returns:
     list: A list of usernames.
     """
     usernames = []
     try:
-        with open(csv_file, mode="r", newline="") as file:
+        with open(csv_file, mode="r", encoding="utf-8-sig") as file:
+            logging.info("Reading usernames from CSV file...")
             reader = csv.DictReader(file)
+            headers = reader.fieldnames
+            logging.info(f"CSV file headers: {headers}")
             for row in reader:
-                if "userName" in row:
-                    usernames.append(row["userName"])
+                if username_column_header in row:
+                    usernames.append(row[username_column_header])
+                else:
+                    logging.error(f"Column '{username_column_header}' not found in the CSV file.")
+                    break
     except FileNotFoundError:
         logging.error(f"File {csv_file} not found.")
     except Exception as e:
         logging.error(f"Error reading the CSV file: {e}")
     
+    logging.info(f"Read {len(usernames)} usernames from the CSV file.")
+
     return usernames
+
+
+
+def should_exclude_user(user_name, exclude_usernames, exclude_patterns):
+    """
+    Determines if a user should be excluded based on a list of usernames and patterns.
+
+    Parameters:
+    user_name (str): The username to check.
+    exclude_usernames (list): A list of specific usernames to exclude.
+    exclude_patterns (list): A list of patterns (e.g., domains) to exclude.
+
+    Returns:
+    bool: True if the user should be excluded, False otherwise.
+    """
+    # Check if the user is in the exclude_usernames list
+    if user_name in exclude_usernames:
+        return True
+    
+    # Check if the user matches any of the patterns in exclude_patterns
+    for pattern in exclude_patterns:
+        if re.search(pattern, user_name):
+            return True
+    
+    return False
 
 
 def pseudo_enforce_SSO(
     client,
     usernames_to_update=None,
+    exclude_usernames=None,
+    exclude_patterns=None,
     roles_to_exclude=["admin", "supervisor"],
     exclude_blank_federationId=True,
     safe_mode=True,
@@ -75,6 +112,10 @@ def pseudo_enforce_SSO(
         The client used to interact with the Five9 domain.
     usernames_to_update (optional): list
         A list of usernames to update.
+    exclude_usernames (optional): list
+        A list of specific usernames to exclude from updates.
+    exclude_patterns (optional): list
+        A list of patterns (e.g., domains) to exclude from updates.
     roles_to_exclude (optional): list of str
         Roles to be excluded from the update. Default is ["admin", "supervisor"].
     safe_mode (optional): bool
@@ -87,29 +128,37 @@ def pseudo_enforce_SSO(
     tuple: (modified_users, error_users)
         modified_users: list of user objects successfully updated.
         error_users: list of user objects where updates failed.
-
-    Raises:
-    zeep.exceptions.Fault
-        If an error occurs during the update process.
     """
+
+    logging.debug(f"There are {len(usernames_to_update)} users in the list of target users.")
 
     print("Fetching users from Five9...")
     user_fetch_start_time = time.time()
     users = client.service.getUsersInfo()
     user_fetch_end_time = time.time()
     user_fetch_time = user_fetch_end_time - user_fetch_start_time
-    logging.info(f"Fetched {len(users)} users from Five9 in {user_fetch_time:.2f} seconds.")
+    logging.debug(f"Fetched {len(users)} users from Five9 in {user_fetch_time:.2f} seconds.")
 
     users_to_update = []
     missing_users = []
 
+
     for user in users:
+        user_name = user.generalInfo.userName
+
+        # Check if user should be excluded
+        if should_exclude_user(user_name, exclude_usernames, exclude_patterns):
+            logging.debug(f"Excluding user: {user_name}")
+            continue
+
         if (
             usernames_to_update is not None
-            and user.generalInfo.userName in usernames_to_update
         ):
-            users_to_update.append(user)
+            if user_name in usernames_to_update:
+                users_to_update.append(user)
             continue
+        
+        logging.debug(f"This user snuck through: {user_name}")
 
         exclude = False
         for role in roles_to_exclude:
@@ -240,6 +289,18 @@ if __name__ == "__main__":
         help="Path to the CSV file containing the list of users to update"
     )
 
+    parser.add_argument(
+        "--exclude_usernames",
+        type=str,
+        help="Comma-separated list of specific usernames to exclude",
+    )
+    
+    parser.add_argument(
+        "--exclude_patterns",
+        type=str,
+        help="Comma-separated list of patterns (e.g., domains) to exclude",
+    )
+
     args = parser.parse_args()
 
     # Set logging level
@@ -261,11 +322,23 @@ if __name__ == "__main__":
 
     usernames_to_update = None
     if args.csv_file:
+        logging.info(f"Reading usernames from CSV file: {args.csv_file}")
         usernames_to_update = read_usernames_from_csv(args.csv_file)
+        logging.info(f"Found {len(usernames_to_update)} usernames in the CSV file.")
+
+    exclude_usernames = []
+    if args.exclude_usernames:
+        exclude_usernames = args.exclude_usernames.split(",")
+
+    exclude_patterns = []
+    if args.exclude_patterns:
+        exclude_patterns = args.exclude_patterns.split(",")
 
     modified_users, error_users = pseudo_enforce_SSO(
         client,
         usernames_to_update=usernames_to_update,
+        exclude_usernames=exclude_usernames,
+        exclude_patterns=exclude_patterns,
         exclude_blank_federationId=args.exclude_blank_federationId,
         temp_email=temp_email,
         safe_mode=safe_mode,
