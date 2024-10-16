@@ -36,13 +36,13 @@ def append_to_csv(filename, data, subdir="private"):
         writer.writerow(data)
 
 
-def read_column_values_from_csv(csv_file, username_column_header="userName"):
+def read_column_values_from_csv(csv_file, target_column_header):
     """
     Reads a CSV file and extracts the list of usernames from the specified column.
 
     Parameters:
     csv_file (str): The path to the CSV file containing user data.
-    username_column_header (str): The column header to extract usernames from. Default is 'userName'.
+    target_column_header (str): The column header to extract usernames from. Default is 'userName'.
 
     Returns:
     list: A list of usernames.
@@ -54,10 +54,10 @@ def read_column_values_from_csv(csv_file, username_column_header="userName"):
             headers = reader.fieldnames
             logging.debug(f"CSV file headers: {headers}")
             for row in reader:
-                if username_column_header in row:
-                    usernames.append(row[username_column_header])
+                if target_column_header in row:
+                    usernames.append(row[target_column_header])
                 else:
-                    logging.error(f"Column '{username_column_header}' not found in the CSV file.")
+                    logging.error(f"Column '{target_column_header}' not found in the CSV file.")
                     break
     except FileNotFoundError:
         logging.error(f"File {csv_file} not found.")
@@ -137,7 +137,7 @@ def pseudo_enforce_SSO(
 
     logging.debug(f"There are {len(usernames_to_update)} users in the list of target users.")
 
-    print("Fetching users from Five9...")
+    logging.info("Fetching users from Five9...")
     user_fetch_start_time = time.time()
     users = client.service.getUsersInfo()
     user_fetch_end_time = time.time()
@@ -188,7 +188,7 @@ def pseudo_enforce_SSO(
     # create a tqdm progress bar
     with tqdm(total=total_users, desc="Updating users", mininterval=1) as pbar:
         filename_prefix = "" if not safe_mode else "dry_run_"
-        logging.info(f"Updating {total_users} users...\n")
+        
         for user in users_to_update[processed:]:
             try:
                 original_email = user.generalInfo.EMail.strip()
@@ -336,8 +336,7 @@ if __name__ == "__main__":
     usernames_to_update = None
     if args.target_user_csv:
         logging.info(f"Reading usernames from CSV file: {args.target_user_csv}")
-        usernames_to_update = read_column_values_from_csv(args.target_user_csv)
-        logging.info(f"Found {len(usernames_to_update)} usernames in the CSV file.")
+        usernames_to_update = read_column_values_from_csv(args.target_user_csv, target_column_header="userName")
 
     exclude_usernames = []
     if args.exclude_usernames:
