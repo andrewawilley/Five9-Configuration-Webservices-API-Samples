@@ -145,7 +145,7 @@ class Five9Client(zeep.Client):
             vcc_config = self.service.getVCCConfiguration()
             logging.info(f"API VERSION: {api_version}")
             if api_version != "v4":
-                logging.info("New version")
+                logging.debug("New version")
                 self.domain_name = vcc_config["domainName"]
                 self.domain_id = vcc_config["domainId"]
             else:

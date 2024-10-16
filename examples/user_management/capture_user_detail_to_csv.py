@@ -20,37 +20,41 @@ def capture_user_details(
     target_permissions: dict = {},
     target_filename: str = "users.csv",
     target_users: list = [],
-    limit_to_target_users: bool = False,
 ):
     """Retrieve user details from a Five9 client object and save them to a CSV file.
 
     Args:
         client (five9_session.Five9Client): A Five9 client object that is authenticated and connected.
         target_generalInfo_fields (list, optional): A list of strings specifying the general information fields to include in the CSV file. Defaults to ["userName", "EMail", "fullName", "active"].
-        target_permissions (dict, optional): A dictionary specifying the role keys and permission types to include in the CSV file. The keys of the dictionary should correspond to role keys, and the values should be lists of permission types. If a user has a role with a matching key, and that role has a permission with a matching type, the value of that permission will be included in the CSV file. Defaults to {}.
+        target_permissions (dict, optional): A dictionary specifying the role keys and permission types to include in the CSV file. Defaults to {}.
         target_filename (str, optional): A string specifying the name of the CSV file to save the user details to. Defaults to "users.csv".
+        target_users (list, optional): A list of usernames to limit the retrieval to specific users. Defaults to [].
 
     Returns:
         None: This function does not return anything, but it writes the user details to a CSV file.
     """
 
-    if limit_to_target_users is False:
-        logging.info(f"Limiting user details to the following users: {target_users}")
-        # Get the user information from the Five9 API
-        users = client.service.getUsersInfo()
-
-    else:  # Filter the users list to only include the target users
-        logging.info(f"Limiting user details capture to targeted users")
-        # Loop through the target_users to get information from the Five9 API individually, use tqdm to show a progress bar
+    if target_users:
+        logging.info(f"Limiting user details capture to targeted users: {target_users}")
         users = []
         for user in tqdm.tqdm(target_users):
-            user_info = client.service.getUserInfo(user)
-            users.append(user_info)
-            time.sleep(0.3)
+            try:
+                user_info = client.service.getUserInfo(user)
+                users.append(user_info)
+                time.sleep(0.3)  # Delay between API calls to avoid rate limits
+            except Exception as e:
+                logging.error(f"Error retrieving info for user {user}: {e}")
+    else:
+        logging.info(f"Retrieving all users' details.")
+        users = client.service.getUsersInfo()
 
     logging.info(f"Capturing details for {len(users)} users")
 
-    # if the target_permissions dictionary is empty, loop through all the users and get all the permission names
+    if not users:
+        logging.warning("No users retrieved. Exiting without creating CSV.")
+        return  # Exit the function if no users were retrieved
+
+    # Add logic for target permissions as before...
     if not target_permissions:
         logging.info(
             "No target permissions specified. Capturing all permissions for each user."
@@ -64,38 +68,44 @@ def capture_user_details(
                         if perm.type not in target_permissions[role_key]:
                             target_permissions[role_key].append(perm.type)
 
-    # Print the target permissions
     logging.info(f"Target permissions: {target_permissions}")
 
-    # Create an empty list to store the agent information
+    # Create an empty list to store the user information
     ap = []
 
-    # Loop through each user
     for user in users:
         user_output = {}
         for attribute in target_generalInfo_fields:
             user_output[attribute] = user.generalInfo[attribute]
 
-        # for role_key in target_permissions.keys():
-        #     for permission in target_permissions[role_key]:
+        # Add media types configuration to the output
+        media_types = user.generalInfo.mediaTypeConfig.mediaTypes
+        for media_type in media_types:
+            media_type_name = media_type.type
+            user_output[f"media_enabled_{media_type_name}"] = media_type.enabled
 
+        # Add permissions if specified
         for role_key in target_permissions.keys():
             if user.roles[role_key] is not None:
                 for perm in user.roles[role_key]["permissions"]:
                     if perm.type in target_permissions[role_key]:
                         user_output[perm.type] = perm.value
 
-        # Append the agent dictionary to the ap list
+        # Append the user dictionary to the ap list
         ap.append(user_output)
 
-    # check that the target path exists, if not create it
+    if not ap:
+        logging.warning("No user details captured. Exiting without creating CSV.")
+        return
+
+    # Ensure that the target directory exists
     if not os.path.exists(os.path.dirname(target_filename)):
         os.makedirs(os.path.dirname(target_filename))
         logging.info(f"Created directory: {os.path.dirname(target_filename)}")
     else:
         logging.info(f"Directory already exists: {os.path.dirname(target_filename)}")
 
-    # Write the list of agent information to a CSV file
+    # Write the list of user information to a CSV file
     with open(target_filename, "w", newline="") as file:
         # Create a CSV writer object
         writer = csv.DictWriter(file, fieldnames=ap[0].keys())
@@ -159,8 +169,8 @@ if __name__ == "__main__":
 
     # Specify any role keys and permission types to include in the CSV file
     # target_permissions = {"agent": ["ManageAvailabilityBySkill", "CallForwarding"]}
-    # target_permissions = {"agent": ["ManageAvailabilityBySkill"]}
-    target_permissions = {}
+    target_permissions = {"agent": ["ManageAvailabilityBySkill"]}
+    # target_permissions = {}
     target_users = []
 
     capture_user_details(
@@ -169,5 +179,4 @@ if __name__ == "__main__":
         target_generalInfo_fields=target_generalInfo_fields,
         target_filename=target_filename,
         target_users=target_users,
-        limit_to_target_users=True,
     )
