@@ -13,25 +13,30 @@ from five9.five9_session import Five9Client
 from five9.utils.general import get_random_password
 
 
-def append_to_csv(filename, data):
+def append_to_csv(filename, data, subdir="private"):
     """
     Appends data to a CSV file.
 
     Parameters:
     filename (str): The name of the CSV file.
     data (dict): A dictionary containing the data.
-    fieldnames (list): A list of field names for the CSV file.
     """
-    file_exists = os.path.isfile(filename)
+    # Ensure the 'private' directory exists
+    os.makedirs(subdir, exist_ok=True)
 
-    with open(filename, "a", newline="") as csvfile:
+    # Prepend the 'private' directory to the filename
+    filepath = os.path.join(subdir, filename)
+
+    file_exists = os.path.isfile(filepath)
+
+    with open(filepath, "a", newline="") as csvfile:
         writer = csv.DictWriter(csvfile, data)
         if not file_exists:
             writer.writeheader()
         writer.writerow(data)
 
 
-def read_usernames_from_csv(csv_file, username_column_header="userName"):
+def read_column_values_from_csv(csv_file, username_column_header="userName"):
     """
     Reads a CSV file and extracts the list of usernames from the specified column.
 
@@ -45,10 +50,9 @@ def read_usernames_from_csv(csv_file, username_column_header="userName"):
     usernames = []
     try:
         with open(csv_file, mode="r", encoding="utf-8-sig") as file:
-            logging.info("Reading usernames from CSV file...")
             reader = csv.DictReader(file)
             headers = reader.fieldnames
-            logging.info(f"CSV file headers: {headers}")
+            logging.debug(f"CSV file headers: {headers}")
             for row in reader:
                 if username_column_header in row:
                     usernames.append(row[username_column_header])
@@ -100,6 +104,7 @@ def pseudo_enforce_SSO(
     safe_mode=True,
     simulated_delay=0,
     temp_email="tempemail@temp.com",
+    output_subdir="private"
 ):
     """
     Updates user accounts in the Five9 domain to pseudo-enforce Single Sign-On (SSO) compliance.
@@ -217,7 +222,7 @@ def pseudo_enforce_SSO(
                 write_data = {
                     "userName": user.generalInfo.userName,
                 }
-                append_to_csv(f"{filename_prefix}modified_users.csv", write_data)
+                append_to_csv(f"{filename_prefix}modified_users.csv", write_data, subdir=output_subdir)
 
             except zeep.exceptions.Fault as e:
                 error_user_data = {
@@ -225,7 +230,7 @@ def pseudo_enforce_SSO(
                     "federationId": user.generalInfo.federationId,
                     "error": str(e),
                 }
-                append_to_csv(f"{filename_prefix}error_users.csv", error_user_data)
+                append_to_csv(f"{filename_prefix}error_users.csv", error_user_data, subdir=output_subdir)
                 error_users.append(error_user_data)
                 errors += 1
                 print(f"Error updating {user.generalInfo.userName}: {e}")
@@ -284,7 +289,7 @@ if __name__ == "__main__":
     )
     
     parser.add_argument(
-        "--csv_file",
+        "--target_user_csv",
         type=str,
         help="Path to the CSV file containing the list of users to update"
     )
@@ -300,6 +305,13 @@ if __name__ == "__main__":
         type=str,
         help="Comma-separated list of patterns (e.g., domains) to exclude",
     )
+    
+    parser.add_argument(
+        "--output_subdir",
+        default="private",
+        type=str,
+        help="subdirectory to store output files",
+    )
 
     args = parser.parse_args()
 
@@ -310,6 +322,7 @@ if __name__ == "__main__":
     safe_mode = bool(int(args.safe_mode))
     temp_email = args.temp_email
     exclude_blank_federationId = bool(int(args.exclude_blank_federationId))
+    output_subdir = args.output_subdir
 
     if password is None:
         password = getpass()
@@ -321,9 +334,9 @@ if __name__ == "__main__":
     )
 
     usernames_to_update = None
-    if args.csv_file:
-        logging.info(f"Reading usernames from CSV file: {args.csv_file}")
-        usernames_to_update = read_usernames_from_csv(args.csv_file)
+    if args.target_user_csv:
+        logging.info(f"Reading usernames from CSV file: {args.target_user_csv}")
+        usernames_to_update = read_column_values_from_csv(args.target_user_csv)
         logging.info(f"Found {len(usernames_to_update)} usernames in the CSV file.")
 
     exclude_usernames = []
@@ -343,4 +356,5 @@ if __name__ == "__main__":
         temp_email=temp_email,
         safe_mode=safe_mode,
         simulated_delay=args.simulated_delay,
+        output_subdir=output_subdir
     )
