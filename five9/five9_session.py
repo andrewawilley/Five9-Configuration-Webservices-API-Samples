@@ -142,15 +142,16 @@ class Five9Client(zeep.Client):
             if sessiontype == "admin":
                 self.call_counters = self.service.getCallCountersState()
 
-            vcc_config = self.service.getVCCConfiguration()
-            logging.info(f"API VERSION: {api_version}")
-            if api_version != "v4":
-                logging.debug("New version")
-                self.domain_name = vcc_config["domainName"]
-                self.domain_id = vcc_config["domainId"]
-            else:
-                self.domain_name = "HARDCODED"
-                self.domain_id = "HARDCODED"
+            if sessiontype != "statistics":
+                vcc_config = self.service.getVCCConfiguration()
+                logging.info(f"API VERSION: {api_version}")
+                if api_version != "v4":
+                    logging.debug("New version")
+                    self.domain_name = vcc_config["domainName"]
+                    self.domain_id = vcc_config["domainId"]
+                else:
+                    self.domain_name = "HARDCODED"
+                    self.domain_id = "HARDCODED"
 
             logging.info(f"Client ready for {five9username}")
 

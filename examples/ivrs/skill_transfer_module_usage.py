@@ -2,6 +2,8 @@ import argparse
 import xml.etree.ElementTree as ET
 import json
 import csv
+import time
+import logging  # Add import for logging module
 
 from getpass import getpass
 
@@ -74,14 +76,21 @@ if __name__ == "__main__":
     # Ensure the output directory exists
     os.makedirs(os.path.dirname(output_file), exist_ok=True)
 
+    logging.basicConfig(level=logging.INFO)
+    start_time = time.time()  # Start time for total runtime
+
     client = five9_session.Five9Client(
         five9username=args.username,
         five9password=password,
         api_hostname_alias=args.hostalias,
     )
 
+    ivr_start_time = time.time()  # Start time for pulling IVR scripts
     # Get the IVR script definitions
     ivrs = client.service.getIVRScripts()
+    ivr_end_time = time.time()  # End time for pulling IVR scripts
+
+    logging.info(f"Time taken to pull IVR scripts: {ivr_end_time - ivr_start_time:.2f} seconds")
 
     ivr_skill_usage = []
 
@@ -126,4 +135,7 @@ if __name__ == "__main__":
                     skill_target_order += 1
 
     if args.verbose:
-        print(json.dumps(ivr_skill_usage, indent=2))
+        logging.info(json.dumps(ivr_skill_usage, indent=2))
+
+    end_time = time.time()  # End time for total runtime
+    logging.info(f"Total runtime: {end_time - start_time:.2f} seconds")
