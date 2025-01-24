@@ -11,7 +11,7 @@ list_update_settings = {
         # Note that the key fields combine to create unique-together constraints that are used
         # to create or update the underlying contact records.
         {"columnNumber": 1, "fieldName": "number1", "key": "true"},
-        {"columnNumber": 2, "fieldName": "killFlag", "key": "false"}
+        {"columnNumber": 2, "fieldName": "last_disposition_timestamp", "key": "false"}
     ],
     "callNowMode": "true",  # set to true to add to the ASAP queue
     # "callTime": "1651260618000", # epoch milliseconds, applies if callNowMode is true
@@ -29,7 +29,7 @@ result_identifier = client.service.asyncAddRecordsToList(
     listUpdateSettings=list_update_settings,
     resetDispositionsInCampaignsImportData=['ob_outreach', 'ob_outreach - Processing'],
     importData={
-        "values": {"item": ["9135554444", "False"]}
+        "values": {"item": ["9135554444", "2024-01-01 09:00:00.000"]}
     },
 )
 

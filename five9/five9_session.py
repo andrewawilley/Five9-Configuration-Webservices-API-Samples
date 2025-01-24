@@ -7,7 +7,7 @@ from lxml import etree
 
 from getpass import getpass
 
-# import os
+import os
 import requests
 import zeep
 from zeep.plugins import HistoryPlugin
@@ -123,20 +123,20 @@ class Five9Client(zeep.Client):
         logging.info(f"API Definition: {self.api_definition}")
 
         # BREAKFIX - Get the directory of the current file and construct the WSDL file path
-        # current_dir = os.path.dirname(os.path.realpath(__file__))
-        # wsdl_file_path = os.path.join(current_dir, 'static_resources', 'config_webservices_v13.wsdl')
+        current_dir = os.path.dirname(os.path.realpath(__file__))
+        wsdl_file_path = os.path.join(current_dir, 'static_resources', 'config_webservices_v13.wsdl')
 
         try:
-            super().__init__(
-                self.api_definition,
-                transport=zeep.Transport(session=self.transport_session),
-                plugins=[self.history],
-            )
             # super().__init__(
-            #     wsdl_file_path,
+            #     self.api_definition,
             #     transport=zeep.Transport(session=self.transport_session),
             #     plugins=[self.history],
             # )
+            super().__init__(
+                wsdl_file_path,
+                transport=zeep.Transport(session=self.transport_session),
+                plugins=[self.history],
+            )
             
             # Fetching the current state of call counters if sessiontype is admin
             if sessiontype == "admin":
