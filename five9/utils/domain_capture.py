@@ -1,3 +1,4 @@
+import datetime
 import json
 import os
 import shutil
@@ -161,21 +162,38 @@ class Five9DomainConfig:
         filetype="txt",
     ):
         output_string = ""
+
+        def fix_datetimes(obj):
+            if isinstance(obj, dict):
+                return {k: fix_datetimes(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                return [fix_datetimes(i) for i in obj]
+            elif isinstance(obj, datetime.datetime):
+                return obj.isoformat()
+            elif isinstance(obj, datetime.date):
+                return obj.isoformat()
+            else:
+                return obj
+
         if toJson == True:
             filetype = "json"
-            output_string = json.dumps(
-                domain_object, sort_keys=sort_keys, indent=indent
-            )
+            try:
+                clean_object = fix_datetimes(domain_object)  # <= Only modifies datetime fields
+                output_string = json.dumps(
+                    clean_object,
+                    sort_keys=sort_keys,
+                    indent=indent
+                )
+            except TypeError as e:
+                print(f"Error: {e}")
+                print(f"Domain Object: {domain_object}")
         else:
             output_string = domain_object
-            # print(f"\n\nTRYING TO WRITE TO FILE\n{target_path}.{filetype}\n\n")
 
-        outputFile = open(f"{target_path}.{filetype}", "w")
-        outputFile.write(output_string)
-        outputFile.close()
+        with open(f"{target_path}.{filetype}", "w") as outputFile:
+            outputFile.write(output_string)
+
         return True
-        # except:
-        #     return False
 
     def get_config_object_detail(
         self, parent_method_name, subfolder_name, method_response=None, vcc_method=None

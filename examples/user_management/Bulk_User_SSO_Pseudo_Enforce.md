@@ -36,27 +36,27 @@ The script supports several command-line arguments for flexible user management.
 
 1. **Basic Run with Safe Mode (Dry Run)**:
    ```bash
-   python sso_enforce.py --username myFive9Username --safe_mode 1
+   python bulk_user_SSO_pseudo_enforce.py --username myFive9Username --safe_mode 1
    ```
 
 2. **Update Specific Users from a CSV File**:
    ```bash
-   python sso_enforce.py --username myFive9Username --password myFive9Password --target_user_csv users.csv --safe_mode 0
+   python bulk_user_SSO_pseudo_enforce.py --username myFive9Username --password myFive9Password --target_user_csv users.csv --safe_mode 0
    ```
 
 3. **Excluding Certain Usernames and Domains**:
    ```bash
-   python sso_enforce.py --username myFive9Username --exclude_usernames user1,user2 --exclude_patterns "@company.com" --safe_mode 0
+   python bulk_user_SSO_pseudo_enforce.py --username myFive9Username --exclude_usernames user1,user2 --exclude_patterns "@company.com" --safe_mode 0
    ```
 
 4. **Simulating Delay Between Updates**:
    ```bash
-   python sso_enforce.py --username myFive9Username --safe_mode 1 --simulated_delay 2
+   python bulk_user_SSO_pseudo_enforce.py --username myFive9Username --safe_mode 1 --simulated_delay 2
    ```
 
 5. **Run Without Safe Mode (Actual Updates)**:
    ```bash
-   python sso_enforce.py --username myFive9Username --safe_mode 0
+   python bulk_user_SSO_pseudo_enforce.py --username myFive9Username --safe_mode 0
    ```
 
 6.  **Specify input files and output locations**:
